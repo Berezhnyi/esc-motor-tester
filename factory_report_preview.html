@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Factory Report Preview</title>
+<style>
+body {
+    font-family: "Times New Roman", serif;
+    background: #f2f2f2;
+    margin: 0;
+    padding: 24px;
+    color: #111;
+}
+.page {
+    width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 24px;
+    box-shadow: 0 2px 18px rgba(0,0,0,0.18);
+}
+.title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 14px;
+}
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+.meta td {
+    border: none;
+    padding: 4px 10px;
+    font-size: 15px;
+}
+.data th, .data td {
+    border: 2px solid #111;
+    padding: 8px 9px;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 16px;
+}
+.data th {
+    background: #9b9b9b;
+    font-weight: bold;
+}
+.data tr:nth-child(odd) td {
+    background: #bfbfbf;
+}
+.data .merged {
+    background: #fff !important;
+    font-size: 17px;
+}
+.note {
+    background: #9b9b9b !important;
+    text-align: left !important;
+    font-size: 15px !important;
+    line-height: 1.35;
+}
+</style>
+</head>
+<body>
+<div class="page">
+    <div class="title">M2807-1300KV</div>
+    <table class="meta">
+        <tr>
+            <td><b>Motor model:</b></td><td>M2807-1300KV</td>
+            <td><b>Prop model:</b></td><td>GF7040</td>
+            <td><b>ESC model:</b></td><td>HOBBYWING 60A</td>
+        </tr>
+        <tr>
+            <td><b>Power source:</b></td><td>6S / bench PSU</td>
+            <td><b>Operator:</b></td><td>Operator-1</td>
+            <td><b>Note:</b></td><td>Factory-style report</td>
+        </tr>
+        <tr>
+            <td><b>Test time:</b></td><td>07.07.2026 14:30</td>
+            <td><b>Motor channel:</b></td><td>M1</td>
+            <td><b>Mode:</b></td><td>Step thrust test</td>
+        </tr>
+    </table>
+    <br>
+    <table class="data">
+        <tr>
+            <th>Item NO.</th>
+            <th>Prop</th>
+            <th>Throttle</th>
+            <th>Volts<br>(V)</th>
+            <th>Amps<br>(A)</th>
+            <th>Watts<br>(W)</th>
+            <th>Revolution<br>(ERPM)</th>
+            <th>Thrust<br>(g)</th>
+            <th>Efficiency<br>(g/W)</th>
+        </tr>
+        <tr>
+            <td rowspan="6" class="merged">M2807-<br>1300KV</td>
+            <td rowspan="6" class="merged">GF7040</td>
+            <td>50%</td><td>25,24</td><td>14,60</td><td>368,5</td><td>13970</td><td>1280</td><td>3,47</td>
+        </tr>
+        <tr><td>60%</td><td>25,20</td><td>20,10</td><td>506,5</td><td>16120</td><td>1560</td><td>3,08</td></tr>
+        <tr><td>70%</td><td>25,16</td><td>27,90</td><td>701,9</td><td>17790</td><td>1810</td><td>2,58</td></tr>
+        <tr><td>80%</td><td>25,10</td><td>35,20</td><td>883,5</td><td>19580</td><td>2050</td><td>2,32</td></tr>
+        <tr><td>90%</td><td>25,05</td><td>42,80</td><td>1072,1</td><td>21000</td><td>2240</td><td>2,09</td></tr>
+        <tr><td>100%</td><td>25,00</td><td>50,60</td><td>1265,0</td><td>22030</td><td>2400</td><td>1,90</td></tr>
+        <tr>
+            <td colspan="9" class="note">
+                Notes: Hold time before each saved step is 4 seconds. RPM stability waiting is not used.
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

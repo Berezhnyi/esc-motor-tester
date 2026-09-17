@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Motor Test Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bg: #0a0a0b; --panel: #141416; --accent: #00ff41; --warn: #ffc107; --crit: #ff4444; --info: #007bff; --text: #e0e0e0; --purple: #6f42c1; --cool: #00c3ff; }
+        body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; font-size: 14px; line-height: 1.35; }
+        .topbar { background: #000; border-bottom: 2px solid #222; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100; flex-shrink: 0; }
+        .tele-grid { display: flex; gap: 8px; }
+        .stat-card { background: #1c1c1f; padding: 5px 10px; border-radius: 6px; text-align: center; border: 1px solid #333; min-width: 80px; transition: border-color 0.2s; }
+        .stat-card small { font-size: 10px; color: #a0a0a0; text-transform: uppercase; }
+        .stat-value { font-size: 17px; font-weight: bold; color: var(--accent); font-family: 'Courier New', monospace; display: block; }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 12px; text-transform: uppercase; transition: all 0.2s; }
+        .btn-blue { background: var(--info); color: white; }
+        .btn-red { background: var(--crit); color: white; }
+        .btn-green { background: #28a745; color: white; }
+        .btn-purple { background: var(--purple); color: white; }
+        .btn-cool { background: var(--cool); color: #000; }
+        .btn-sub { background: #2a2a2e; color: #d2d2d2; border: 1px solid #444; padding: 7px 12px; font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn:hover:not(:disabled), .btn-sub:hover:not(:disabled) { filter: brightness(1.2); }
+        .btn:disabled, .btn-sub:disabled { opacity: 0.3; cursor: not-allowed; }
+        .main-workspace { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 260px; background: #111; border-right: 1px solid #222; padding: 15px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
+        .menu-title { font-size: 11px; color: #8f8f8f; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+        .menu-btn { background: #1c1c1f; border: 1px solid #333; color: #ddd; padding: 11px; border-radius: 8px; text-align: left; cursor: pointer; transition: 0.2s; font-size: 13px; }
+        .menu-btn.active { background: var(--info); border-color: var(--info); color: white; }
+        .window-container { flex: 1; padding: 20px; background: var(--bg); overflow-y: auto; position: relative; }
+        .test-window { display: none; height: 100%; flex-direction: column; }
+        .test-window.active { display: flex; }
+        .window-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .window-header h2 { margin: 0; color: var(--info); font-size: 19px; }
+        .chart-box { background: #141416; border: 1px solid #333; border-radius: 12px; padding: 15px; flex: 1; min-height: 280px; margin-bottom: 8px; position: relative; }
+        .thrust-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: center; background: #141416; border-radius: 8px; }
+        .thrust-table th { background: #1a1a1d; padding: 9px; border-bottom: 2px solid #333; color: #aaa; }
+        .thrust-table tr { transition: background 0.2s; }
+        .thrust-table td { padding: 6px; border-bottom: 1px solid #222; }
+        .console { background: #000; color: var(--accent); padding: 10px; height: 130px; font-family: 'Courier New', monospace; font-size: 12px; overflow-y: auto; border-radius: 8px; border: 1px solid #333; }
+        .slider-master { width: 100%; height: 8px; accent-color: var(--accent); cursor: pointer; margin: 10px 0; }
+        input[type=number], input[type=text], select { background: #000; border: 1px solid #555; color: white; padding: 7px; border-radius: 4px; text-align: center; font-size: 13px; }
+        input:focus, select:focus { border-color: var(--info); outline: none; }
+        input[type=text] { text-align: left; padding: 6px; }
+        select { width: 100%; padding: 7px; font-weight: bold; cursor: pointer; }
+        .profile-grid { display: grid; grid-template-columns: 1.3fr 0.7fr 0.7fr auto; gap: 10px; align-items: end; }
+        .profile-grid label { font-size: 11px; color: #aaa; text-transform: uppercase; display:block; margin-bottom:4px; }
+        .profile-hint, .field-help { margin-top: 6px; font-size: 12px; color: #aaa; line-height: 1.35; }
+        .section-note { color:#b8b8b8; font-size:13px; line-height:1.45; margin: 0 0 12px 0; }
+        .passport-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+        .passport-grid label { font-size: 11px; color: #aaa; text-transform: uppercase; display:block; margin-bottom:4px; }
+        .passport-grid input { width: 100%; box-sizing: border-box; }
+        .component-row { display:grid; grid-template-columns: 1fr auto auto; gap:6px; align-items:center; }
+        .component-row input { min-width:0; }
+        .icon-btn { background:#2a2a2e; color:#d2d2d2; border:1px solid #444; border-radius:4px; width:32px; height:32px; cursor:pointer; font-weight:bold; }
+        .quick-select { width:100%; margin-top:5px; font-size:12px; }
+        .rpm-spread-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:8px; margin-bottom:15px; }
+        .rpm-card { background:#101013; border:1px solid #2b2b30; border-radius:6px; padding:8px; text-align:center; min-width:0; }
+        .rpm-card small { display:block; color:#aaa; font-size:10px; text-transform:uppercase; margin-bottom:4px; }
+        .rpm-card b { display:block; color:var(--accent); font-family:'Courier New', monospace; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .rpm-card.spread-ok { border-color:#1f8f3a; background:#0d1a10; }
+        .rpm-card.spread-ok b { color:#00ff41; }
+        .rpm-card.spread-warn { border-color:#9a7a16; background:#1d190b; }
+        .rpm-card.spread-warn b { color:#ffc107; }
+        .rpm-card.spread-alert { border-color:#b86813; background:#211408; }
+        .rpm-card.spread-alert b { color:#ff9f1a; }
+        .rpm-card.spread-bad { border-color:#9f2b2b; background:#211010; }
+        .rpm-card.spread-bad b { color:#ff4444; }
+        .stability-box { border:1px solid #333; background:#101013; border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; gap:12px; align-items:center; }
+        .stability-box b { color:var(--accent); }
+        .stability-box.warn b { color:var(--warn); }
+        .stability-box.bad b { color:var(--crit); }
+        .start-table { width:100%; border-collapse:collapse; background:#141416; font-size:12px; text-align:center; }
+        .start-table th { background:#1a1a1d; color:#aaa; padding:9px; border-bottom:2px solid #333; }
+        .start-table td { padding:8px; border-bottom:1px solid #222; }
+        .meta-grid { background: #141416; padding: 12px; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .meta-grid div { display: flex; flex-direction: column; gap: 4px; }
+        .meta-grid label { font-size: 10px; color: #888; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button id="btnConnect" class="btn btn-blue" onclick="toggleConnect()">🔌 ПОДКЛЮЧИТЬ</button>
+        <div class="tele-grid">
+            <div class="stat-card"><small>Напряжение В</small><span id="valV" class="stat-value">0.00</span></div>
+            <div class="stat-card"><small>Ток A</small><span id="valA" class="stat-value">0.00</span></div>
+            <div class="stat-card" style="border-color:var(--warn)"><small>Вибрация</small><span id="valG" class="stat-value">0</span></div>
+            <div class="stat-card" style="border-color:var(--accent)"><small>M1 ERPM</small><span id="topRpm0" class="stat-value">0</span></div>
+            <div class="stat-card" style="border-color:var(--accent)"><small>M2 ERPM</small><span id="topRpm1" class="stat-value">0</span></div>
+            <div class="stat-card" style="border-color:var(--accent)"><small>M3 ERPM</small><span id="topRpm2" class="stat-value">0</span></div>
+            <div class="stat-card" style="border-color:var(--accent)"><small>M4 ERPM</small><span id="topRpm3" class="stat-value">0</span></div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button id="btnCool" class="btn btn-cool" style="font-size: 14px; padding: 10px 20px;" onclick="startCooling()" disabled>❄️ ОХЛАЖДЕНИЕ (25%)</button>
+        <button id="btnStop" class="btn btn-red" style="font-size: 16px; padding: 10px 25px;" onclick="emergencyStop()" disabled>🛑 СТОП</button>
+    </div>
+</div>
+
+<div class="main-workspace">
+    <div class="sidebar">
+        <button id="btnNavDash" class="menu-btn active" onclick="openWindow('win-dash', this)">🏠 Обороты и разгон</button>
+        <button id="navThrust" class="menu-btn" onclick="openWindow('win-thrust', this)" disabled>📊 Тяга и эффективность</button>
+        <button id="navStart" class="menu-btn" onclick="openWindow('win-start', this)" disabled>🟢 Старт мотора</button>
+        <button id="navLinear" class="menu-btn" onclick="openWindow('win-linear', this)" disabled>🚀 Линейный sweep</button>
+        <button id="navRes" class="menu-btn" onclick="openWindow('win-res', this)" disabled>📳 Вибрации / резонансы</button>
+        
+        <div class="menu-title">⚙️ НАСТРОЙКА ТЕСТА</div>
+        <div style="background: #1c1c1f; padding: 10px; border-radius: 8px; border: 1px solid #333; margin-bottom: 5px;">
+            <small style="color:#aaa; font-size:11px; display:block; margin-bottom:4px; text-transform: uppercase;">Каналы моторов</small>
+            <select id="motorSelect" onchange="changeActiveMotor(this.value)">
+                </select>
+            <div class="field-help">Выберите один мотор для безопасной проверки или все моторы для сравнения каналов.</div>
+        </div>
+
+        <div class="menu-title">РУЧНОЙ ГАЗ</div>
+        <div style="background: #1c1c1f; padding: 12px; border-radius: 8px; border: 1px solid #333; text-align: center;">
+            <div id="mVal" style="font-size: 20px; font-weight: bold; color: var(--accent);">1000</div>
+            <input type="range" id="mS" class="slider-master" min="1000" max="2000" value="1000" oninput="masterInput(this.value)" disabled>
+            <div class="field-help">Прямое управление PWM. Используйте осторожно: 1000 - стоп, 2000 - максимум.</div>
+        </div>
+
+        <div class="menu-title">ПАСПОРТ ТЕСТА</div>
+        <div class="passport-grid" style="background: #1c1c1f; padding: 12px; border-radius: 8px; border: 1px solid #333;">
+            <div>
+                <label>Мотор</label>
+                <div class="component-row"><input type="text" id="metaMotor" placeholder="Xing2 2207 1850KV"><button class="icon-btn" onclick="saveComponent('motors','metaMotor')" title="Сохранить в базу">＋</button><button class="icon-btn" onclick="deleteSelectedComponent('motors','quickMotor','metaMotor')" title="Удалить выбранное">×</button></div>
+                <select id="quickMotor" class="quick-select" onchange="applyComponent('quickMotor','metaMotor')"><option value="">Быстрый выбор мотора</option></select>
+            </div>
+            <div>
+                <label>Винт</label>
+                <div class="component-row"><input type="text" id="metaProp" placeholder="HQProp 5x4.3x3"><button class="icon-btn" onclick="saveComponent('props','metaProp')" title="Сохранить в базу">＋</button><button class="icon-btn" onclick="deleteSelectedComponent('props','quickProp','metaProp')" title="Удалить выбранное">×</button></div>
+                <select id="quickProp" class="quick-select" onchange="applyComponent('quickProp','metaProp')"><option value="">Быстрый выбор винта</option></select>
+            </div>
+            <div>
+                <label>ESC</label>
+                <div class="component-row"><input type="text" id="metaEsc" placeholder="60A BLHeli32"><button class="icon-btn" onclick="saveComponent('escs','metaEsc')" title="Сохранить в базу">＋</button><button class="icon-btn" onclick="deleteSelectedComponent('escs','quickEsc','metaEsc')" title="Удалить выбранное">×</button></div>
+                <select id="quickEsc" class="quick-select" onchange="applyComponent('quickEsc','metaEsc')"><option value="">Быстрый выбор ESC</option></select>
+            </div>
+            <div>
+                <label>Питание</label>
+                <div class="component-row"><input type="text" id="metaBattery" placeholder="6S / bench PSU"><button class="icon-btn" onclick="saveComponent('batteries','metaBattery')" title="Сохранить в базу">＋</button><button class="icon-btn" onclick="deleteSelectedComponent('batteries','quickBattery','metaBattery')" title="Удалить выбранное">×</button></div>
+                <select id="quickBattery" class="quick-select" onchange="applyComponent('quickBattery','metaBattery')"><option value="">Быстрый выбор питания</option></select>
+            </div>
+            <div><label>Оператор</label><input type="text" id="metaOperator" placeholder="имя / смена"></div>
+            <div><label>Заметка</label><input type="text" id="metaNote" placeholder="условия теста, температура, стенд"></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <button class="btn-sub" onclick="document.getElementById('componentDbFile').click()">📂 Импорт базы</button>
+                <button class="btn-sub" onclick="exportComponentDatabase()">💾 Экспорт базы</button>
+                <input id="componentDbFile" type="file" accept=".json,application/json" style="display:none" onchange="importComponentDatabase(this.files[0]); this.value='';">
+            </div>
+            <div class="field-help">＋ сохраняет введенное комплектующее в локальную базу браузера. Затем его можно выбрать одним нажатием из списка.</div>
+        </div>
+
+        <div class="menu-title">БЫСТРАЯ ПРОВЕРКА</div>
+        <div style="background: #1c1c1f; padding: 12px; border-radius: 8px; border: 1px solid #333;">
+            <button id="btnCalibrate" class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="runCalibrationCheck()" disabled>▶ Проверка мотора</button>
+            <div class="field-help">Короткий прогон 1000-1100-1200 PWM для проверки направления, старта и телеметрии.</div>
+        </div>
+    </div>
+
+    <div class="window-container">
+        <div id="win-dash" class="test-window active">
+            <div style="background: #141416; padding: 25px; border-radius: 12px; border: 1px solid #333; margin-bottom: 15px;">
+                <div class="window-header" style="margin-bottom:12px;">
+                    <h2>Обороты моторов и разброс</h2>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                        <button class="btn-sub" onclick="exportRpmLogCSV()">💾 CSV RPM</button>
+                        <button class="btn-sub" onclick="exportMotorRpmPNGs()">📸 PNG M1-M4</button>
+                        <button class="btn-sub" onclick="exportChartToPNG('chartDashRpm', 'Motor_RPM_Live_Graph')">📸 Общий PNG</button>
+                    </div>
+                </div>
+                <div class="chart-box" style="height:260px; min-height:260px; flex:none; margin-bottom:15px;"><canvas id="chartDashRpm"></canvas></div>
+                <p class="section-note">График начинает запись только при газе выше 1000 PWM. Текущий разброс считается по активным моторам, итоговый - по средним ERPM за всё время после 4 секунд стабилизации.</p>
+                <div class="rpm-spread-grid">
+                    <div class="rpm-card"><small>M1 ERPM</small><b id="diagRpm0">--</b></div>
+                    <div class="rpm-card"><small>M2 ERPM</small><b id="diagRpm1">--</b></div>
+                    <div class="rpm-card"><small>M3 ERPM</small><b id="diagRpm2">--</b></div>
+                    <div class="rpm-card"><small>M4 ERPM</small><b id="diagRpm3">--</b></div>
+                    <div class="rpm-card"><small>Среднее</small><b id="diagRpmAvg">--</b></div>
+                    <div id="diagRpmSpreadCard" class="rpm-card"><small>Разброс</small><b id="diagRpmSpread">--</b></div>
+                </div>
+                <div class="rpm-spread-grid">
+                    <div class="rpm-card"><small>M1 итог</small><b id="finalRpm0">--</b></div>
+                    <div class="rpm-card"><small>M2 итог</small><b id="finalRpm1">--</b></div>
+                    <div class="rpm-card"><small>M3 итог</small><b id="finalRpm2">--</b></div>
+                    <div class="rpm-card"><small>M4 итог</small><b id="finalRpm3">--</b></div>
+                    <div class="rpm-card"><small>Итог ср.</small><b id="finalRpmAvg">--</b></div>
+                    <div id="finalRpmSpreadCard" class="rpm-card"><small>Итог разброс</small><b id="finalRpmSpread">--</b></div>
+                </div>
+                <button id="btnSmooth100" class="btn btn-green" style="width:100%; font-size: 14px; padding: 15px;" onclick="runSmooth100Test()" disabled>▶ Плавный разгон до 100%</button>
+                <div style="display:grid; grid-template-columns: 130px 150px 1fr; gap:10px; align-items:end; margin-top:12px;">
+                    <div>
+                        <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px; text-transform: uppercase;">Цель газа %</label>
+                        <input type="number" id="targetGasPercent" min="0" max="100" value="50" style="width:100%; box-sizing:border-box; padding:8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px; text-transform: uppercase;">Удержание, сек</label>
+                        <input type="number" id="rampHoldSeconds" min="0" max="600" value="0" style="width:100%; box-sizing:border-box; padding:8px;">
+                    </div>
+                    <button id="btnTargetRamp" class="btn btn-blue" style="width:100%; font-size: 13px; padding: 12px;" onclick="runTargetRampTest()" disabled>▶ Разгон до выбранного газа</button>
+                </div>
+                <div class="field-help">Удержание 0 сек означает ручной режим без таймера. Значение больше 0 включает автостоп с плавным торможением.</div>
+            </div>
+
+            <h3 style="margin-bottom:5px;">📋 Журнал событий стенда</h3>
+            <div id="log" class="console" style="flex:1;">> Motor Test Suite готов. Подключите плату, выберите каналы моторов и режим теста.</div>
+        </div>
+
+        <div id="win-thrust" class="test-window">
+            <div class="window-header">
+                <h2>📊 Ступенчатый замер тяги <span id="lblThrustMotor" style="color:var(--accent); font-size:14px; font-weight:normal; margin-left:10px;">[Мотор: M1]</span></h2>
+                <div style="display: flex; gap: 8px;">
+                    <button id="btnStartThrust" class="btn btn-green" onclick="startThrustTest()">▶ Начать тест (10%)</button>
+                    <button id="btnNextThrust" class="btn btn-blue" onclick="nextThrustStep()" disabled>Зафиксировать шаг ➡️</button>
+                    <button id="btnPauseThrust" class="btn btn-cool" onclick="toggleThrustPause()" disabled>⏸ Пауза / охлаждение</button>
+                    <button id="btnToggleChart" class="btn btn-purple" onclick="toggleChartMode()">📈 Вид: ГАЗ %</button>
+                    <button id="btnResetThrust" class="btn" style="background:#2a2a2e; color:#bbb; border:1px solid #444;" onclick="resetThrustTable()">🧹 Сбросить таблицу</button>
+                    <button id="btnExportCSV" class="btn" style="background:#17a2b8; color:white;" onclick="exportToCSV()">💾 Экспорт CSV</button>
+                    <button class="btn" style="background:#218838; color:white;" onclick="exportFactoryXLS()">📄 Заводской XLS</button>
+                </div>
+            </div>
+            <p class="section-note">Тест проходит по шагам 10-100%. После выхода на шаг программа выдерживает 4 секунды, даёт двойной сигнал и открывает кнопку фиксации. Кнопка паузы переводит мотор на охлаждение и затем возобновляет тест с того же шага.</p>
+
+            <div class="chart-box"><canvas id="chartThrust"></canvas></div>
+            <div style="text-align: right; margin-bottom: 10px;">
+                <button class="btn-sub" onclick="exportChartToPNG('chartThrust', 'VMG_Thrust_Graph')">📸 Сохранить график в PNG</button>
+            </div>
+
+            <table class="thrust-table">
+                <thead><tr><th>Старт</th><th>Газ, % / PWM</th><th>ERPM средние</th><th>Ток A средний</th><th>Тяга, г<br><span style="color:#777;">Enter = зафиксировать</span></th><th>Эффективность, г/Вт</th></tr></thead>
+                <tbody id="tableThrustBody"></tbody>
+            </table>
+        </div>
+
+        <div id="win-start" class="test-window">
+            <div class="window-header">
+                <h2>🟢 Тест старта мотора <span id="lblStartMotor" style="color:var(--accent); font-size:14px; font-weight:normal; margin-left:10px;">[Моторы: ВСЕ]</span></h2>
+                <button id="btnStartScan" class="btn btn-green" onclick="runMotorStartTest()" disabled>▶ Найти стартовый PWM</button>
+            </div>
+            <p class="section-note">Плавно поднимает газ от 1000 PWM и фиксирует две точки: где мотор впервые начал вращаться и где обороты стали устойчивыми. Для проверки ESC-платы удобнее выбрать «Все моторы», для отдельного мотора - нужный канал.</p>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:12px;">
+                <div><label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px; text-transform:uppercase;">Макс. PWM поиска</label><input type="number" id="startScanMaxPwm" min="1050" max="1400" value="1250" style="width:100%; box-sizing:border-box;"></div>
+                <div><label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px; text-transform:uppercase;">Шаг PWM</label><input type="number" id="startScanStepPwm" min="2" max="20" value="5" style="width:100%; box-sizing:border-box;"></div>
+                <div><label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px; text-transform:uppercase;">Порог ERPM старта</label><input type="number" id="startRpmThreshold" min="50" max="2000" value="300" style="width:100%; box-sizing:border-box;"></div>
+                <div><label style="font-size:11px; color:#aaa; display:block; margin-bottom:4px; text-transform:uppercase;">Стабильность %</label><input type="number" id="startStablePercent" min="1" max="15" value="5" style="width:100%; box-sizing:border-box;"></div>
+            </div>
+            <table class="start-table">
+                <thead><tr><th>Канал</th><th>Старт вращения PWM</th><th>Минимальный стабильный PWM</th><th>ERPM на стабильном PWM</th><th>Разброс RPM %</th><th>Статус</th></tr></thead>
+                <tbody id="startTestBody">
+                    <tr><td>M1</td><td id="startSpin0">--</td><td id="startStable0">--</td><td id="startRpm0">--</td><td id="startSpread0">--</td><td id="startStatus0">--</td></tr>
+                    <tr><td>M2</td><td id="startSpin1">--</td><td id="startStable1">--</td><td id="startRpm1">--</td><td id="startSpread1">--</td><td id="startStatus1">--</td></tr>
+                    <tr><td>M3</td><td id="startSpin2">--</td><td id="startStable2">--</td><td id="startRpm2">--</td><td id="startSpread2">--</td><td id="startStatus2">--</td></tr>
+                    <tr><td>M4</td><td id="startSpin3">--</td><td id="startStable3">--</td><td id="startRpm3">--</td><td id="startSpread3">--</td><td id="startStatus3">--</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="win-linear" class="test-window">
+            <div class="window-header">
+                <h2>🚀 Линейный sweep 0-100-0% <span id="lblLinearMotor" style="color:var(--accent); font-size:14px; font-weight:normal; margin-left:10px;">[Моторы: ВСЕ]</span></h2>
+                <button class="btn btn-green" onclick="runLinearSweep()">▶ НАЧАТЬ РАЗГОН</button>
+            </div>
+            <p class="section-note">Плавный проход по всему диапазону PWM: 1000 → 2000 → 1000. Нужен для поиска провалов ERPM, неравномерного старта, просадки тока и отличий между каналами.</p>
+            <div class="chart-box"><canvas id="chartLinear"></canvas></div>
+            <div style="text-align: right;">
+                <button class="btn-sub" onclick="exportChartToPNG('chartLinear', 'ESC_Linear_Sweep_Graph')">📸 Сохранить график в PNG</button>
+            </div>
+        </div>
+
+        <div id="win-res" class="test-window">
+            <div class="window-header"><h2>📳 Анализ вибраций / резонансов</h2><button class="btn btn-purple" onclick="runResonanceTest()">▶ Сканировать</button></div>
+            <p class="section-note">Плавный проход по PWM с записью gyro/vibe. Используйте для поиска зон, где вибрация резко растёт.</p>
+            <div class="chart-box"><canvas id="chartRes"></canvas></div>
+            <div style="text-align: right;">
+                <button class="btn-sub" onclick="exportChartToPNG('chartRes', 'Gyro_Vibration_Graph')">📸 Сохранить график в PNG</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let port, writer, reader, testing = false, curV = 0, curA = 0, curG = 0, latestERPM = [0,0,0,0], motorVals = [1000, 1000, 1000, 1000];
+let chThrust, chRes, chLinear, chDashRpm, sessionData = {}, mState=0, mSize=0, mCmd=0, mPayload=[], mCrc=0;
+let thrustStep = 0, smooth100Holding = false, targetRampHolding = false, coolingActive = false, activeMotorIdx = 'all'; 
+let isPolling = false, ioCounter = 0; // Навечно изолированный счетчик тиков
+
+let ampHistory = [];
+let erpmHistory = [[], [], [], []];
+const BUFFER_SIZE = 6; 
+let dashRpmTick = 0;
+const DASH_RPM_POINTS = 120;
+let rpmCaptureActive = false, rpmCaptureStart = 0, lastDashRpmUpdate = 0;
+let rpmLog = [];
+let audioCtx = null, thrustReadyTimer = null, thrustStepStartedAt = 0, thrustStepReady = false;
+let thrustManualStepMode = false;
+let thrustPaused = false, pausedThrustStep = 0, pausedManualStepMode = false;
+let startTestResults = [{}, {}, {}, {}];
+let thrustChartMode = 'gas'; 
+let commandGuardMap = {};
+
+function guardCommand(key, delay=700) {
+    const now = Date.now();
+    if(commandGuardMap[key] && now - commandGuardMap[key] < delay) {
+        log("⚠️ Команда уже выполняется, повторное нажатие проигнорировано.", "#ffc107");
+        return false;
+    }
+    commandGuardMap[key] = now;
+    return true;
+}
+
+window.onload = () => {
+    try {
+        const tb = document.getElementById('tableThrustBody');
+        if(tb) {
+            tb.innerHTML = "";
+            for(let i=1; i<=10; i++) {
+                tb.innerHTML += `<tr id="row-${i}"><td><button class="btn-sub" onclick="runThrustStep(${i})" title="Запустить этот уровень газа">▶</button></td><td><b style="font-size:13px;">${i*10}%</b> <span style="color:#777;">(${1000+i*100} PWM)</span></td><td id="tR-${i}">--</td><td><input type="number" id="inA-${i}" placeholder="ток, A" step="0.01" oninput="calcGraph()" onkeydown="handleThrustInputKey(event, ${i}, 'amps')" style="width:95px; padding: 7px; font-weight: bold;"></td><td><input type="number" id="inG-${i}" placeholder="тяга, г" oninput="calcGraph()" onkeydown="handleThrustInputKey(event, ${i}, 'thrust')" style="width:120px; padding: 7px; font-weight: bold;"></td><td id="tE-${i}" style="color:var(--accent); font-weight:bold; font-size:13px;">--</td></tr>`;
+            }
+        }
+    } catch(e){}
+
+    const cfg = (l,c,y) => ({ label:l, data:[], borderColor:c, yAxisID:y, tension:0.08, pointRadius:0, borderWidth:2, hidden: false });
+    const fastOptions = (extra={}) => ({
+        responsive:true,
+        maintainAspectRatio:false,
+        animation:false,
+        interaction:{ intersect:false, mode:'nearest' },
+        elements:{ point:{ radius:0, hitRadius:4 } },
+        ...extra
+    });
+    
+    try {
+        chThrust = new Chart(document.getElementById('chartThrust'), { 
+            type:'line', 
+            data:{ labels:[10,20,30,40,50,60,70,80,90,100], datasets:[cfg('Тяга (г)','#007bff','y'), cfg('г/Вт','#00ff41','y1')] }, 
+            options:fastOptions({ scales: { y: { type: 'linear', display: true, position: 'left' }, y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } } } })
+        });
+    } catch(e){}
+
+    try {
+        chRes = new Chart(document.getElementById('chartRes'), { 
+            type:'line', 
+            data:{ labels:[], datasets:[cfg('Шум','#6f42c1','y')] }, 
+            options:fastOptions()
+        });
+    } catch(e){}
+
+    try {
+        chDashRpm = new Chart(document.getElementById('chartDashRpm'), {
+            type:'line',
+            data:{
+                labels:[],
+                datasets:[
+                    cfg('M1 ERPM','#00ff41','y'),
+                    cfg('M2 ERPM','#00c3ff','y'),
+                    cfg('M3 ERPM','#6f42c1','y'),
+                    cfg('M4 ERPM','#ffc107','y')
+                ]
+            },
+            options:fastOptions({ scales:{ y:{ type:'linear', display:true, position:'left', beginAtZero:true } } })
+        });
+    } catch(e){}
+
+    // УЛУЧШЕНИЕ: Выводим все 4 мотора на один график разгона раздельными кривыми + Линия тока
+    try {
+        chLinear = new Chart(document.getElementById('chartLinear'), { 
+            type:'line', 
+            data:{ 
+                labels:[], 
+                datasets:[
+                    cfg('M1 ERPM','#00ff41','y'), 
+                    cfg('M2 ERPM','#00c3ff','y'), 
+                    cfg('M3 ERPM','#6f42c1','y'), 
+                    cfg('M4 ERPM','#ffc107','y'), 
+                    cfg('Ток (A)','#ff4444','y1')
+                ] 
+            }, 
+            options:fastOptions({ scales: { y: { type: 'linear', display: true, position: 'left' }, y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } } } })
+        });
+    } catch(e){}
+    
+    loadComponentDatabase();
+    changeActiveSelectorLayout('win-dash');
+};
+
+function log(m, c="#00ff41") {
+    const l = document.getElementById('log');
+    if(!l) return;
+    l.innerHTML += `> <span style="color:${c}">${m}</span><br>`;
+    l.scrollTop = l.scrollHeight;
+}
+
+function chartUpdate(chart) {
+    if(!chart) return;
+    try { chart.update('none'); }
+    catch(e) { chart.update(); }
+}
+
+function getAudioCtx() {
+    try {
+        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+    } catch(e) {
+        return null;
+    }
+}
+
+function beep(freq=880, duration=0.12, volume=0.08, delay=0) {
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const start = ctx.currentTime + delay;
+    const end = start + duration;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(end + 0.02);
+}
+
+function soundDoubleReady() {
+    beep(980, 0.11, 0.09, 0);
+    beep(980, 0.11, 0.09, 0.18);
+}
+
+function soundStart() { beep(660, 0.10, 0.07, 0); beep(880, 0.10, 0.07, 0.13); }
+function soundDone() { beep(880, 0.10, 0.07, 0); beep(1175, 0.14, 0.07, 0.14); }
+function soundStop() { beep(420, 0.16, 0.08, 0); }
+function soundAlarm() { beep(220, 0.16, 0.11, 0); beep(220, 0.16, 0.11, 0.22); }
+
+function clearThrustReadyTimer() {
+    if(thrustReadyTimer) {
+        clearTimeout(thrustReadyTimer);
+        thrustReadyTimer = null;
+    }
+    thrustStepReady = false;
+}
+
+function scheduleThrustReadyBeep(step) {
+    clearThrustReadyTimer();
+    thrustStepStartedAt = Date.now();
+    const btn = document.getElementById('btnNextThrust');
+    if(btn) btn.disabled = true;
+    thrustReadyTimer = setTimeout(() => {
+        if(testing && thrustStep === step) {
+            thrustStepReady = true;
+            if(btn) btn.disabled = false;
+            const ampInput = document.getElementById(`inA-${step}`);
+            if(ampInput) { ampInput.focus(); ampInput.select(); }
+            soundDoubleReady();
+            log(`🔔 Шаг ${step}: 4 секунды выдержки прошли, можно фиксировать тягу.`, "#00c3ff");
+        }
+        thrustReadyTimer = null;
+    }, 4000);
+}
+
+function setThrustStableStatus(text, spreadText, state) {
+    const box = document.getElementById('thrustStabilityBox');
+    const label = document.getElementById('thrustStableText');
+    const spread = document.getElementById('thrustStableSpread');
+    if(label) label.innerText = text;
+    if(spread) spread.innerText = spreadText;
+    if(box) {
+        box.classList.remove('warn', 'bad');
+        if(state) box.classList.add(state);
+    }
+}
+
+function getActiveRpmValuesFromRow(row) {
+    if(!row || !row.erpm) return [];
+    if(activeMotorIdx === 'all') return row.erpm.filter(v => v > 0);
+    const v = row.erpm[activeMotorIdx];
+    return v > 0 ? [v] : [];
+}
+
+function calcActiveRpmStability(windowMs=2000) {
+    if(rpmLog.length === 0) return null;
+    const lastMs = rpmLog[rpmLog.length - 1].ms;
+    const values = [];
+    for(const row of rpmLog) {
+        if(lastMs - row.ms <= windowMs) values.push(...getActiveRpmValuesFromRow(row));
+    }
+    if(values.length === 0) return null;
+    const avg = values.reduce((a,b) => a + b, 0) / values.length;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return { count: values.length, avg, min, max, spread: avg > 0 ? ((max - min) / avg) * 100 : null };
+}
+
+function getNumberInput(id, fallback, min, max) {
+    const el = document.getElementById(id);
+    let v = el ? parseInt(el.value, 10) : fallback;
+    if(isNaN(v)) v = fallback;
+    v = Math.max(min, Math.min(max, v));
+    if(el) el.value = v;
+    return v;
+}
+
+function getSelectedMotorIndexes() {
+    return activeMotorIdx === 'all' ? [0,1,2,3] : [activeMotorIdx];
+}
+
+function setStartCell(i, field, value, color="") {
+    const el = document.getElementById(`start${field}${i}`);
+    if(el) {
+        el.innerText = value;
+        el.style.color = color;
+    }
+}
+
+function resetStartTestTable() {
+    startTestResults = [{}, {}, {}, {}];
+    for(let i=0; i<4; i++) {
+        setStartCell(i, "Spin", "--");
+        setStartCell(i, "Stable", "--");
+        setStartCell(i, "Rpm", "--");
+        setStartCell(i, "Spread", "--");
+        setStartCell(i, "Status", "--");
+    }
+}
+
+function sampleMotorRpmStats(motorIndex, ms=900) {
+    const start = Date.now();
+    return new Promise(resolve => {
+        const values = [];
+        const timer = setInterval(() => {
+            const v = latestERPM[motorIndex] || 0;
+            if(v > 0) values.push(v);
+            if(Date.now() - start >= ms) {
+                clearInterval(timer);
+                if(values.length === 0) { resolve(null); return; }
+                const avg = values.reduce((a,b) => a + b, 0) / values.length;
+                const min = Math.min(...values);
+                const max = Math.max(...values);
+                resolve({ count: values.length, avg, min, max, spread: avg > 0 ? ((max - min) / avg) * 100 : null });
+            }
+        }, 90);
+    });
+}
+
+function sampleMotorGroupRpmStats(indexes, ms=700) {
+    const start = Date.now();
+    return new Promise(resolve => {
+        const values = {};
+        indexes.forEach(i => values[i] = []);
+        const timer = setInterval(() => {
+            indexes.forEach(i => {
+                const v = latestERPM[i] || 0;
+                if(v > 0) values[i].push(v);
+            });
+            if(Date.now() - start >= ms) {
+                clearInterval(timer);
+                const out = {};
+                indexes.forEach(i => {
+                    const arr = values[i];
+                    if(arr.length === 0) { out[i] = null; return; }
+                    const avg = arr.reduce((a,b) => a + b, 0) / arr.length;
+                    const min = Math.min(...arr);
+                    const max = Math.max(...arr);
+                    out[i] = { count: arr.length, avg, min, max, spread: avg > 0 ? ((max - min) / avg) * 100 : null };
+                });
+                resolve(out);
+            }
+        }, 90);
+    });
+}
+
+async function runMotorStartTest() {
+    if(!guardCommand('runMotorStartTest')) return;
+    getAudioCtx();
+    if(!port) { log("❌ Сначала подключите устройство.", "#ff4444"); return; }
+    if(testing) { log("⚠️ Уже запущен другой тест. Остановите его перед тестом старта.", "#ffc107"); return; }
+    const maxPwm = getNumberInput('startScanMaxPwm', 1250, 1050, 1400);
+    const stepPwm = getNumberInput('startScanStepPwm', 5, 2, 20);
+    const rpmThreshold = getNumberInput('startRpmThreshold', 300, 50, 2000);
+    const stablePercent = getNumberInput('startStablePercent', 5, 1, 15);
+    const indexes = getSelectedMotorIndexes();
+    resetStartTestTable();
+    testing = true;
+    soundStart();
+    log(`▶ Тест старта: поиск 1000-${maxPwm} PWM, порог старта ${rpmThreshold} ERPM, стабильность до ${stablePercent}%.`);
+    try {
+        motorVals.fill(1000);
+        await writeMotors();
+        await sleep(600);
+        for(let pwm = 1000; pwm <= maxPwm && testing; pwm += stepPwm) {
+            motorVals.fill(pwm);
+            await writeMotors();
+            await sleep(180);
+            const needStable = [];
+            for(const i of indexes) {
+                const result = startTestResults[i];
+                const rpm = latestERPM[i] || 0;
+                if(!result.spinPwm && rpm >= rpmThreshold) {
+                    result.spinPwm = pwm;
+                    setStartCell(i, "Spin", pwm, "var(--warn)");
+                    setStartCell(i, "Status", "вращается, проверяем стабильность", "var(--warn)");
+                }
+                if(result.spinPwm && !result.stablePwm) needStable.push(i);
+            }
+            if(needStable.length > 0) {
+                const groupStats = await sampleMotorGroupRpmStats(needStable, 700);
+                for(const i of needStable) {
+                    const result = startTestResults[i];
+                    const stats = groupStats[i];
+                    if(stats && stats.avg >= rpmThreshold && stats.spread !== null && stats.spread <= stablePercent) {
+                        result.stablePwm = pwm;
+                        result.rpm = stats.avg;
+                        result.spread = stats.spread;
+                        setStartCell(i, "Stable", pwm, "var(--accent)");
+                        setStartCell(i, "Rpm", Math.round(stats.avg), "var(--accent)");
+                        setStartCell(i, "Spread", `${stats.spread.toFixed(2)}%`, "var(--accent)");
+                        setStartCell(i, "Status", "стабильно", "var(--accent)");
+                    }
+                }
+            }
+            if(indexes.every(i => startTestResults[i].stablePwm)) break;
+        }
+        for(const i of indexes) {
+            const result = startTestResults[i];
+            if(!result.spinPwm) setStartCell(i, "Status", "не стартовал в диапазоне", "var(--crit)");
+            else if(!result.stablePwm) setStartCell(i, "Status", "старт есть, стабильный PWM не найден", "var(--warn)");
+        }
+    } finally {
+        await softStop();
+        testing = false;
+        soundDone();
+        log("✅ Тест старта завершен. Сравните стартовый и стабильный PWM между каналами.", "#00ff41");
+    }
+}
+
+function getActiveAvgERPM() {
+    if (activeMotorIdx === 'all') {
+        let sum = 0; for(let i=0; i<4; i++) { sum += erpmHistory[i].length === 0 ? latestERPM[i] : erpmHistory[i].reduce((a, b) => a + b, 0) / erpmHistory[i].length; }
+        return Math.round(sum / 4);
+    }
+    if (erpmHistory[activeMotorIdx].length === 0) return latestERPM[activeMotorIdx];
+    return Math.round(erpmHistory[activeMotorIdx].reduce((a, b) => a + b, 0) / erpmHistory[activeMotorIdx].length);
+}
+
+function getAvgAmps() { if (ampHistory.length === 0) return curA; return ampHistory.reduce((a, b) => a + b, 0) / ampHistory.length; }
+
+function calcMotorSpread(values) {
+    const active = values.filter(v => v > 0);
+    if(active.length < 2) return { avg: active[0] || 0, spread: null, min: active[0] || 0, max: active[0] || 0, count: active.length };
+    const min = Math.min(...active);
+    const max = Math.max(...active);
+    const avg = active.reduce((a,b) => a + b, 0) / active.length;
+    return { avg, spread: avg > 0 ? ((max - min) / avg) * 100 : null, min, max, count: active.length };
+}
+
+function getSpreadClass(spread) {
+    if(spread === null || isNaN(spread)) return "";
+    if(spread <= 3) return "spread-ok";
+    if(spread <= 5) return "spread-warn";
+    if(spread <= 8) return "spread-alert";
+    return "spread-bad";
+}
+
+function updateMotorSpreadPanel(values = latestERPM) {
+    for(let i=0; i<4; i++) {
+        const el = document.getElementById(`diagRpm${i}`);
+        if(el) el.innerText = values[i] > 0 ? Math.round(values[i]) : "--";
+    }
+    const stats = calcMotorSpread(values);
+    const avgEl = document.getElementById('diagRpmAvg');
+    const spreadEl = document.getElementById('diagRpmSpread');
+    const spreadCard = document.getElementById('diagRpmSpreadCard');
+    if(avgEl) avgEl.innerText = stats.count > 0 ? Math.round(stats.avg) : "--";
+    if(spreadEl) spreadEl.innerText = stats.spread === null ? "--" : `${stats.spread.toFixed(1)}%`;
+    if(spreadCard) {
+        spreadCard.classList.remove('spread-ok', 'spread-warn', 'spread-alert', 'spread-bad');
+        const cls = getSpreadClass(stats.spread);
+        if(cls) spreadCard.classList.add(cls);
+    }
+}
+
+function calcFinalMotorSpread(stabilizationMs=4000) {
+    if(rpmLog.length === 0) return null;
+    let rows = rpmLog.filter(r => r.ms >= stabilizationMs);
+    let fallback = false;
+    if(rows.length === 0) {
+        fallback = true;
+        rows = rpmLog.slice(-Math.min(10, rpmLog.length));
+    }
+    const avgs = [0,0,0,0];
+    const counts = [0,0,0,0];
+    for(const r of rows) {
+        for(let i=0; i<4; i++) {
+            const v = r.erpm[i];
+            if(v > 0) { avgs[i] += v; counts[i]++; }
+        }
+    }
+    for(let i=0; i<4; i++) avgs[i] = counts[i] ? avgs[i] / counts[i] : 0;
+    const stats = calcMotorSpread(avgs);
+    const deviations = avgs.map(v => stats.avg > 0 && v > 0 ? ((v - stats.avg) / stats.avg) * 100 : null);
+    return { avgs, counts, stats, deviations, rows: rows.length, stabilizationMs, fallback };
+}
+
+function updateFinalMotorSpreadPanel(result = calcFinalMotorSpread()) {
+    const values = result ? result.avgs : [0,0,0,0];
+    for(let i=0; i<4; i++) {
+        const el = document.getElementById(`finalRpm${i}`);
+        const dev = result && result.deviations[i] !== null ? ` (${result.deviations[i] >= 0 ? '+' : ''}${result.deviations[i].toFixed(1)}%)` : "";
+        if(el) el.innerText = values[i] > 0 ? `${Math.round(values[i])}${dev}` : "--";
+    }
+    const avgEl = document.getElementById('finalRpmAvg');
+    const spreadEl = document.getElementById('finalRpmSpread');
+    const spreadCard = document.getElementById('finalRpmSpreadCard');
+    const stats = result ? result.stats : { avg:0, spread:null, count:0 };
+    if(avgEl) avgEl.innerText = stats.count > 0 ? Math.round(stats.avg) : "--";
+    if(spreadEl) spreadEl.innerText = stats.spread === null ? "--" : `${stats.spread.toFixed(1)}%`;
+    if(spreadCard) {
+        spreadCard.classList.remove('spread-ok', 'spread-warn', 'spread-alert', 'spread-bad');
+        const cls = getSpreadClass(stats.spread);
+        if(cls) spreadCard.classList.add(cls);
+    }
+}
+
+function isMotorOutputActive() {
+    return Math.max(...motorVals) > 1000;
+}
+
+function resetDashRpmChart() {
+    dashRpmTick = 0;
+    lastDashRpmUpdate = 0;
+    updateMotorSpreadPanel([0,0,0,0]);
+    updateFinalMotorSpreadPanel(null);
+    if(!chDashRpm) return;
+    chDashRpm.data.labels = [];
+    for(let i=0; i<4; i++) chDashRpm.data.datasets[i].data = [];
+    chartUpdate(chDashRpm);
+}
+
+function startRpmCapture() {
+    rpmCaptureActive = true;
+    rpmCaptureStart = Date.now();
+    rpmLog = [];
+    resetDashRpmChart();
+    log("📈 Запись RPM начата.", "#00c3ff");
+}
+
+function stopRpmCapture() {
+    if(!rpmCaptureActive) return;
+    rpmCaptureActive = false;
+    const finalSpread = calcFinalMotorSpread();
+    updateFinalMotorSpreadPanel(finalSpread);
+    const finalText = finalSpread && finalSpread.stats.spread !== null ? ` Итоговый разброс: ${finalSpread.stats.spread.toFixed(1)}%.` : "";
+    log(`📈 Запись RPM остановлена. Точек: ${rpmLog.length}.${finalText}`, "#00c3ff");
+}
+
+function updateRpmCaptureState() {
+    if(isMotorOutputActive()) {
+        if(!rpmCaptureActive) startRpmCapture();
+    } else {
+        stopRpmCapture();
+    }
+}
+
+function updateDashRpmChart() {
+    if(!chDashRpm || !rpmCaptureActive || !isMotorOutputActive()) return;
+    const now = Date.now();
+    if(now - lastDashRpmUpdate < 200) return;
+    lastDashRpmUpdate = now;
+    const elapsedMs = now - rpmCaptureStart;
+    const row = {
+        ms: elapsedMs,
+        pwm: Math.max(...motorVals),
+        voltage: curV,
+        current: curA,
+        vibration: curG,
+        erpm: [...latestERPM],
+        spread: calcMotorSpread(latestERPM)
+    };
+    rpmLog.push(row);
+    updateMotorSpreadPanel(latestERPM);
+    dashRpmTick++;
+    chDashRpm.data.labels.push((elapsedMs / 1000).toFixed(1));
+    for(let i=0; i<4; i++) chDashRpm.data.datasets[i].data.push(latestERPM[i]);
+    if(chDashRpm.data.labels.length > DASH_RPM_POINTS) {
+        chDashRpm.data.labels.shift();
+        for(let i=0; i<4; i++) chDashRpm.data.datasets[i].data.shift();
+    }
+    chartUpdate(chDashRpm);
+}
+
+// ДИНАМИЧЕСКИЙ МАКЕТ СЕЛЕКТОРА (Замер тяги = только 1 из 4, остальные окна = 1 из 4 или Все)
+function changeActiveSelectorLayout(windowId) {
+    let select = document.getElementById('motorSelect'); if(!select) return;
+    let oldVal = select.value; select.innerHTML = "";
+    
+    if(windowId === 'win-thrust') {
+        select.innerHTML += '<option value="0">Только Мотор 1 (M1)</option>';
+        select.innerHTML += '<option value="1">Только Мотор 2 (M2)</option>';
+        select.innerHTML += '<option value="2">Только Мотор 3 (M3)</option>';
+        select.innerHTML += '<option value="3">Только Мотор 4 (M4)</option>';
+        if(oldVal === 'all') { select.value = "0"; activeMotorIdx = 0; } 
+        else { select.value = oldVal; activeMotorIdx = parseInt(oldVal); }
+    } else {
+        select.innerHTML += '<option value="all">Все моторы вместе (All)</option>';
+        select.innerHTML += '<option value="0">Только Мотор 1 (M1)</option>';
+        select.innerHTML += '<option value="1">Только Мотор 2 (M2)</option>';
+        select.innerHTML += '<option value="2">Только Мотор 3 (M3)</option>';
+        select.innerHTML += '<option value="3">Только Мотор 4 (M4)</option>';
+        select.value = (oldVal === "") ? "all" : oldVal;
+        activeMotorIdx = select.value === 'all' ? 'all' : parseInt(select.value);
+    }
+    updateLabels();
+}
+
+function changeActiveMotor(val) { activeMotorIdx = val === 'all' ? 'all' : parseInt(val); updateLabels(); }
+
+function setActiveMotorMode(mode) {
+    const select = document.getElementById('motorSelect');
+    let next = mode;
+    if(mode === 'single' && activeMotorIdx === 'all') next = '0';
+    if(select) {
+        const wanted = next === 'single' ? String(activeMotorIdx === 'all' ? 0 : activeMotorIdx) : String(next);
+        const hasOption = Array.from(select.options || []).some(o => o.value === wanted);
+        if(hasOption) select.value = wanted;
+    }
+    if(next === 'all') activeMotorIdx = 'all';
+    else if(next === 'single') activeMotorIdx = activeMotorIdx === 'all' ? 0 : activeMotorIdx;
+    else activeMotorIdx = parseInt(next);
+    updateLabels();
+}
+
+function updateLabels() {
+    let mText = (activeMotorIdx === 'all') ? "ВСЕ" : `M${activeMotorIdx + 1}`;
+    let lblT = document.getElementById('lblThrustMotor'); if(lblT) lblT.innerText = `[Мотор: M${parseInt(activeMotorIdx)+1 || 1}]`;
+    let lblL = document.getElementById('lblLinearMotor'); if(lblL) lblL.innerText = `[Моторы: ${mText}]`;
+    let lblS = document.getElementById('lblStartMotor'); if(lblS) lblS.innerText = `[Моторы: ${mText}]`;
+}
+
+function openWindow(id, btn) { 
+    document.querySelectorAll('.test-window').forEach(w => w.classList.remove('active')); 
+    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active')); 
+    document.getElementById(id).classList.add('active'); btn.classList.add('active'); 
+    changeActiveSelectorLayout(id);
+}
+
+function serializeMotors() {
+    const d=new Uint8Array(22); d[0]=36; d[1]=77; d[2]=60; d[3]=16; d[4]=214;
+    let crc=16^214; 
+    for(let i=0; i<8; i++){ 
+        let v = 1000; 
+        if (i < 4) { if (activeMotorIdx === 'all' || activeMotorIdx === i) v = motorVals[i]; }
+        d[5+i*2]=v&0xFF; d[6+i*2]=(v>>8)&0xFF; crc^=d[5+i*2]^d[6+i*2]; 
+    }
+    d[21]=crc; return d;
+}
+
+async function writeMotors() {
+    if(!writer) return;
+    try {
+        await writer.write(serializeMotors());
+        updateRpmCaptureState();
+    } catch(e) {
+        console.warn("writeMotors failed:", e.message);
+    }
+}
+
+async function toggleConnect() { if(port) location.reload(); else await connect(); }
+async function connect() {
+    try {
+        if(!('serial' in navigator)) {
+            throw new Error("Web Serial API недоступен. Откройте файл в Chrome/Edge через HTTPS или localhost.");
+        }
+        port = await navigator.serial.requestPort(); await port.open({ baudRate: 115200 });
+        writer = port.writable.getWriter(); updateUI(true); readLoop(); 
+        // Единый жесткий таймер обмена данными (30мс)
+        setInterval(ioLoop, 30); log("✅ СОЕДИНЕНИЕ УСТАНОВЛЕНО.");
+    } catch(e) { log("❌ ОШИБКА: " + e.message, "#ff4444"); }
+}
+
+function updateUI(s) { 
+    let btnConn = document.getElementById('btnConnect'); if(btnConn) btnConn.innerText = s ? "🔌 ВЫКЛ" : "🔌 ПОДКЛЮЧИТЬ"; 
+    ['navThrust','navStart','navRes','navLinear','btnStop','mS','btnCool','btnCalibrate','btnTargetRamp','btnStartScan'].forEach(id => { if(document.getElementById(id)) document.getElementById(id).disabled = !s; }); 
+    if(document.getElementById('btnSmooth100')) document.getElementById('btnSmooth100').disabled = !s;
+}
+
+// УЛЬТИМАТИВНЫЙ ОДНОПОТОЧНЫЙ ДВИЖОК IO (НИКАКИХ КОЛЛИЗИЙ)
+async function ioLoop() {
+    if(!writer || isPolling) return;
+    isPolling = true;
+    try {
+        // Каждый тик (30мс) выплескиваем актуальный массив газа в порт
+        await writer.write(serializeMotors());
+
+        // Быстрая телеметрия: питание/статус/RPM каждые 90мс, gyro реже (270мс), чтобы не забивать serial.
+        ioCounter++;
+        if(ioCounter % 3 === 0) {
+            await writer.write(new Uint8Array([36,77,60,0,106,106])); 
+            await writer.write(new Uint8Array([36,77,60,0,130,130]));
+            await writer.write(new Uint8Array([36,77,60,0,139,139])); 
+        }
+        if(ioCounter % 9 === 0) {
+            await writer.write(new Uint8Array([36,77,60,0,102,102])); 
+        }
+    } catch(e) {
+        console.warn("Поток IO занят драйвером системы:", e.message);
+    } finally {
+        isPolling = false;
+    }
+}
+
+function readLoop() {
+    reader = port.readable.getReader();
+    reader.read().then(function proc({value, done}) {
+        if(done) return;
+        for(let b of value) {
+            switch(mState) {
+                case 0: if(b===36) mState=1; break;
+                case 1: if(b===77) mState=2; else mState=0; break;
+                case 2: if(b===62) mState=3; else mState=0; break;
+                case 3: mSize=b; mCrc=b; mState=4; break;
+                case 4: mCmd=b; mCrc^=b; mPayload=[]; mState=(mSize===0)?6:5; break;
+                case 5: mPayload.push(b); mCrc^=b; if(mPayload.length===mSize) mState=6; break;
+                case 6: if(mCrc===b) processMSP(mCmd, mPayload); mState=0; break;
+            }
+        }
+        reader.read().then(proc);
+    }).catch(e=>{});
+}
+
+function processMSP(c, p) {
+    try {
+        if((c === 110 || c === 106) && p.length >= 7) { 
+            let v = p[0] / 10;
+            if (p.length >= 9) {
+                const extendedVoltage = (p[7] | (p[8] << 8)) / 100;
+                if(extendedVoltage > 0) v = extendedVoltage;
+            }
+            if (v > 0) curV = v;
+            let a = (p[5] | (p[6]<<8)); if (a > 0) curA = a / 100;
+        }
+        if(c === 130 && p.length >= 8) { 
+            let v = p[3] / 10;
+            if(p.length >= 11) {
+                const preciseVoltage = (p[9] | (p[10] << 8)) / 100;
+                if(preciseVoltage > 0) v = preciseVoltage;
+            }
+            if(v > 0) curV = v;
+            let a = (p[6] | (p[7]<<8)); if(a > 0) curA = a / 100;
+        }
+        if(c === 110 || c === 106 || c === 130) { ampHistory.push(curA); if(ampHistory.length > BUFFER_SIZE) ampHistory.shift(); }
+        if(c === 102 && p.length >= 12) { 
+            curG = Math.max(Math.abs((p[6]|p[7]<<8)<<16>>16), Math.abs((p[8]|p[9]<<8)<<16>>16)); 
+            let gEl = document.getElementById('valG'); if(gEl) gEl.innerText = curG;
+        }
+        if(c === 139 && p.length >= 5) { 
+            let count = p[0]; 
+            if(count > 0 && count <= 8) {
+                let block = Math.floor((p.length - 1) / count);
+                for(let i=0; i<Math.min(4, count); i++) {
+                    let offset = 1 + (i * block);
+                    if(offset + 3 < p.length) {
+                        let rpm = (p[offset] | (p[offset+1]<<8) | (p[offset+2]<<16) | (p[offset+3]<<24)) >>> 0;
+                        latestERPM[i] = (rpm > 2000000) ? 0 : rpm;
+                        let rEl = document.getElementById(`topRpm${i}`); if(rEl) rEl.innerText = latestERPM[i];
+                        erpmHistory[i].push(latestERPM[i]); if(erpmHistory[i].length > BUFFER_SIZE) erpmHistory[i].shift();
+                    }
+                }
+                updateDashRpmChart();
+            }
+        }
+        let vEl = document.getElementById('valV'); if(vEl) vEl.innerText = curV.toFixed(2);
+        let aEl = document.getElementById('valA'); if(aEl) aEl.innerText = curA.toFixed(2);
+    } catch(e){}
+}
+
+async function startCooling() {
+    if(!guardCommand('startCooling', 900)) return;
+    getAudioCtx();
+    if(coolingActive) {
+        log("❄️ Охлаждение: получена команда остановки. Плавно снижаем газ...");
+        coolingActive = false;
+        await softStop();
+        soundDone();
+        log("✅ Охлаждение остановлено.", "#00ff41");
+        return;
+    }
+    if(testing) { log("⚠️ Уже запущен другой тест. Остановите его перед включением охлаждения.", "#ffc107"); return; }
+    testing = true; coolingActive = true; thrustStep = 0; smooth100Holding = false; targetRampHolding = false;
+    clearThrustReadyTimer();
+    let btnSmooth = document.getElementById('btnSmooth100'); if(btnSmooth) { btnSmooth.innerText = "▶ НАЧАТЬ РАЗГОН ДО 100%"; btnSmooth.style.background = ""; }
+    let btnCool = document.getElementById('btnCool'); if(btnCool) { btnCool.innerText = "⏹ ОСТАНОВИТЬ ОХЛАЖДЕНИЕ"; btnCool.style.background = "var(--crit)"; btnCool.style.color = "white"; }
+    resetTargetRampButton();
+    let bStart = document.getElementById('btnStartThrust'), bNext = document.getElementById('btnNextThrust'), bReset = document.getElementById('btnResetThrust');
+    if(bStart) bStart.disabled = false; if(bNext) bNext.disabled = true; if(bReset) bReset.disabled = false;
+    highlightThrustRow(0);
+    let current = Math.max(1000, Math.min(1250, Math.max(...motorVals)));
+    for(let v=current; v<=1250 && coolingActive; v+=10) {
+        motorVals.fill(v);
+        await writeMotors();
+        await new Promise(r=>setTimeout(r,35));
+    }
+    if(coolingActive) { motorVals.fill(1250); await writeMotors(); }
+    let mS = document.getElementById('mS'); if(mS) mS.value = 1250;
+    let mVal = document.getElementById('mVal'); if(mVal) mVal.innerText = "1250 (Охлаждение)";
+    log("❄️ РЕЖИМ ОХЛАЖДЕНИЯ: плавный выход на 25% (1250 PWM) для обдува.", "var(--cool)");
+    soundStart();
+}
+
+// ТЕСТ КРУТИТ 100% БЕСКОНЕЧНО НА ГЛАВНОЙ, ПОКА ОПЕРАТОР НЕ НАЖМЕТ КНОПКУ ОСТАНОВА
+async function runSmooth100Test() {
+    if(!guardCommand('runSmooth100Test')) return;
+    getAudioCtx();
+    if(!port) { log("❌ ОШИБКА: Сначала подключите устройство!", "#ff4444"); return; }
+    let btn = document.getElementById('btnSmooth100');
+    if(!testing) {
+        const holdSeconds = getRampHoldSeconds();
+        testing = true; smooth100Holding = true;
+        soundStart();
+        btn.innerText = "⏹ ЗАВЕРШИТЬ РАЗГОН (ПЛАВНЫЙ СТОП)"; btn.style.background = "var(--crit)";
+        log("🚀 РАЗГОН ДО 100%: Плавно поднимаем обороты...");
+        for(let v=1000; v<=2000; v+=10) { if(!testing) break; motorVals.fill(v); await writeMotors(); await new Promise(r=>setTimeout(r,25)); }
+        if(testing) {
+            log(holdSeconds > 0 ? `⏳ Обороты выведены на 100%. Удержание ${holdSeconds} сек.` : `⏳ Обороты выведены на 100%. Удержание мощности. Для остановки нажмите кнопку выше.`, "#ffc107");
+            const holdStart = Date.now();
+            while(testing && smooth100Holding) {
+                motorVals.fill(2000);
+                await writeMotors();
+                if(holdSeconds > 0 && Date.now() - holdStart >= holdSeconds * 1000) { smooth100Holding = false; break; }
+                await new Promise(r=>setTimeout(r,50));
+            }
+        }
+        if(!testing && smooth100Holding) { btn.innerText = "▶ НАЧАТЬ РАЗГОН ДО 100%"; btn.style.background = ""; smooth100Holding = false; return; }
+        log("⏳ Сигнал останова получен. Плавное снижение оборотов...");
+        btn.innerText = "▶ НАЧАТЬ РАЗГОН ДО 100%"; btn.style.background = "";
+        await softStop(); soundDone(); log("✅ Разгон успешно завершен. Двигатели остановлены.", "#00ff41");
+    } else if(smooth100Holding) { smooth100Holding = false; }
+}
+
+function resetTargetRampButton() {
+    let btn = document.getElementById('btnTargetRamp');
+    if(btn) { btn.innerText = "▶ РАЗГОН ДО ЗАДАННОГО ГАЗА"; btn.style.background = ""; }
+}
+
+function resetCoolingButton() {
+    let btn = document.getElementById('btnCool');
+    if(btn) { btn.innerText = "❄️ ОХЛАЖДЕНИЕ (25%)"; btn.style.background = ""; btn.style.color = ""; }
+}
+
+function getTargetGasPercent() {
+    const el = document.getElementById('targetGasPercent');
+    let pct = el ? parseInt(el.value, 10) : 50;
+    if(isNaN(pct)) pct = 50;
+    pct = Math.max(0, Math.min(100, pct));
+    if(el) el.value = pct;
+    return pct;
+}
+
+function getRampHoldSeconds() {
+    const el = document.getElementById('rampHoldSeconds');
+    let sec = el ? parseInt(el.value, 10) : 0;
+    if(isNaN(sec)) sec = 0;
+    sec = Math.max(0, Math.min(600, sec));
+    if(el) el.value = sec;
+    return sec;
+}
+
+async function runTargetRampTest() {
+    if(!guardCommand('runTargetRampTest')) return;
+    getAudioCtx();
+    if(!port) { log("❌ ОШИБКА: Сначала подключите устройство!", "#ff4444"); return; }
+    if(testing && targetRampHolding) { targetRampHolding = false; return; }
+    if(testing) { log("⚠️ Уже запущен другой тест. Остановите его перед разгоном до заданного газа.", "#ffc107"); return; }
+
+    const pct = getTargetGasPercent();
+    const holdSeconds = getRampHoldSeconds();
+    const targetPWM = 1000 + pct * 10;
+    let btn = document.getElementById('btnTargetRamp');
+    testing = true; targetRampHolding = true;
+    soundStart();
+    if(btn) { btn.innerText = "⏹ ЗАВЕРШИТЬ УДЕРЖАНИЕ"; btn.style.background = "var(--crit)"; }
+    log(holdSeconds > 0 ? `▶ Разгон до заданного газа: ${pct}% (${targetPWM} PWM). Удержание ${holdSeconds} сек.` : `▶ Разгон до заданного газа: ${pct}% (${targetPWM} PWM). Автостоп отключен.`);
+    try {
+        let current = Math.max(1000, Math.min(2000, Math.max(...motorVals)));
+        for(let v=current; v<=targetPWM; v+=10) {
+            if(!testing || !targetRampHolding) break;
+            motorVals.fill(v);
+            await writeMotors();
+            await new Promise(r=>setTimeout(r,25));
+        }
+        const holdStart = Date.now();
+        while(testing && targetRampHolding) {
+            motorVals.fill(targetPWM);
+            await writeMotors();
+            if(holdSeconds > 0 && Date.now() - holdStart >= holdSeconds * 1000) { targetRampHolding = false; break; }
+            await new Promise(r=>setTimeout(r,50));
+        }
+        log(holdSeconds > 0 ? "⏳ Таймер удержания завершен. Плавно снижаем газ..." : "⏳ Ручная остановка получена. Плавно снижаем газ...");
+    } finally {
+        targetRampHolding = false;
+        resetTargetRampButton();
+        await softStop();
+        soundDone();
+        log("✅ Разгон до заданного газа завершен. Двигатели остановлены.", "#00ff41");
+    }
+}
+
+async function startThrustTest() {
+    if(!guardCommand('startThrustTest')) return;
+    getAudioCtx();
+    if(!port) { log("❌ ОШИБКА: Сначала подключите устройство!", "#ff4444"); return; }
+    if(testing) return;
+    sessionData = {};
+    thrustManualStepMode = false;
+    thrustPaused = false; pausedThrustStep = 0; pausedManualStepMode = false;
+    await startThrustStep(1, true);
+    soundStart();
+    log(`📊 ТЕСТ ТЯГИ НАЧАТ! Сбор показаний запущен. Шаг 1: Газ 10%.`, "#ffc107");
+}
+
+async function runThrustStep(step) {
+    if(!guardCommand(`runThrustStep-${step}`)) return;
+    getAudioCtx();
+    if(!port) { log("❌ ОШИБКА: Сначала подключите устройство!", "#ff4444"); return; }
+    if(step < 1 || step > 10) return;
+    if(testing && !thrustStep) { log("⚠️ Уже запущен другой тест. Остановите его перед замером тяги.", "#ffc107"); return; }
+    if(testing && thrustStep && !thrustManualStepMode) { log("⚠️ Идет полный тест тяги. Для одиночного шага сначала завершите или остановите текущий тест.", "#ffc107"); return; }
+    if(!testing) soundStart();
+    thrustManualStepMode = true;
+    await startThrustStep(step, false);
+    log(`▶ Запущен ручной шаг тяги: ${step * 10}% (${1000 + step * 100} PWM).`, "#ffc107");
+}
+
+function updateThrustPauseButton() {
+    const btn = document.getElementById('btnPauseThrust');
+    if(!btn) return;
+    if(thrustPaused) {
+        btn.disabled = false;
+        btn.innerText = "▶ Возобновить тест";
+        btn.style.background = "#28a745";
+        return;
+    }
+    btn.innerText = "⏸ Пауза / охлаждение";
+    btn.style.background = "";
+    btn.disabled = !(testing && thrustStep > 0 && !thrustManualStepMode);
+}
+
+async function setThrustPauseCooling() {
+    coolingActive = true;
+    let btnCool = document.getElementById('btnCool');
+    if(btnCool) { btnCool.innerText = "⏹ ОСТАНОВИТЬ ОХЛАЖДЕНИЕ"; btnCool.style.background = "var(--crit)"; btnCool.style.color = "white"; }
+    let current = Math.max(1000, Math.min(1250, Math.max(...motorVals)));
+    for(let v=current; v<=1250 && coolingActive && thrustPaused; v+=10) {
+        motorVals.fill(v);
+        await writeMotors();
+        await sleep(35);
+    }
+    if(coolingActive && thrustPaused) { motorVals.fill(1250); await writeMotors(); }
+    let mS = document.getElementById('mS'); if(mS) mS.value = 1250;
+    let mVal = document.getElementById('mVal'); if(mVal) mVal.innerText = "1250 (Пауза / охлаждение)";
+}
+
+async function toggleThrustPause() {
+    if(!guardCommand('toggleThrustPause', 900)) return;
+    getAudioCtx();
+    if(thrustPaused) {
+        const step = pausedThrustStep;
+        const wasManual = pausedManualStepMode;
+        thrustPaused = false;
+        coolingActive = false;
+        resetCoolingButton();
+        thrustManualStepMode = wasManual;
+        await startThrustStep(step, true);
+        log(`▶ Тест тяги возобновлен с шага ${step} (${step * 10}%).`, "#00c3ff");
+        updateThrustPauseButton();
+        return;
+    }
+    if(!testing || thrustStep < 1 || thrustManualStepMode) {
+        log("⚠️ Пауза доступна только во время полного теста тяги.", "#ffc107");
+        return;
+    }
+    pausedThrustStep = thrustStep;
+    pausedManualStepMode = thrustManualStepMode;
+    thrustPaused = true;
+    testing = false;
+    clearThrustReadyTimer();
+    document.getElementById('btnNextThrust').disabled = true;
+    document.getElementById('btnStartThrust').disabled = true;
+    document.getElementById('btnResetThrust').disabled = true;
+    updateThrustPauseButton();
+    log(`⏸ Пауза теста тяги на шаге ${pausedThrustStep} (${pausedThrustStep * 10}%). Переходим на охлаждение.`, "#ffc107");
+    await setThrustPauseCooling();
+}
+
+async function startThrustStep(step, resetHistories=true) {
+    clearThrustReadyTimer();
+    testing = true;
+    thrustStep = step;
+    thrustStepReady = false;
+    ampHistory = [];
+    erpmHistory.forEach(h => h.length = 0);
+    motorVals.fill(1000 + step * 100);
+    await writeMotors();
+    document.getElementById('btnStartThrust').disabled = true;
+    document.getElementById('btnNextThrust').disabled = true;
+    document.getElementById('btnResetThrust').disabled = true;
+    highlightThrustRow(step);
+    scheduleThrustReadyBeep(step);
+    updateThrustPauseButton();
+}
+
+function handleThrustInputKey(e, step, field) {
+    if(e.key === "Enter") {
+        e.preventDefault();
+        if(field === "amps") {
+            const thrustInput = document.getElementById(`inG-${step}`);
+            if(thrustInput) {
+                thrustInput.focus();
+                thrustInput.select();
+            }
+            return;
+        }
+        nextThrustStep();
+    }
+}
+
+async function nextThrustStep() {
+    if(!guardCommand('nextThrustStep', 900)) return;
+    getAudioCtx();
+    if(thrustStep < 1 || thrustStep > 10) return;
+    if(!thrustStepReady) {
+        log("⏳ Шаг еще не готов: дождитесь 4 секунд выдержки.", "#ffc107");
+        return;
+    }
+    clearThrustReadyTimer();
+    let avgERPM = getActiveAvgERPM();
+    let avgAmps = parseFloat(getAvgAmps().toFixed(2));
+    
+    document.getElementById(`tR-${thrustStep}`).innerText = avgERPM;
+    const ampInput = document.getElementById(`inA-${thrustStep}`);
+    if(ampInput && !ampInput.value) ampInput.value = avgAmps.toFixed(2);
+    const finalAmps = getStepAmps(thrustStep, avgAmps);
+    sessionData[thrustStep] = { a: finalAmps, v: curV };
+    calcGraph();
+    
+    let manualWeight = document.getElementById(`inG-${thrustStep}`).value || 0;
+    log(`📋 Шаг ${thrustStep} (${thrustStep*10}% газ) зафиксирован: ERPM=${avgERPM}, Ток=${finalAmps.toFixed(2)}A`);
+
+    const completedStep = thrustStep;
+    if(thrustManualStepMode) {
+        thrustManualStepMode = false;
+        thrustStep = 0;
+        document.getElementById('btnStartThrust').disabled = false;
+        document.getElementById('btnNextThrust').disabled = true;
+        document.getElementById('btnResetThrust').disabled = false;
+        highlightThrustRow(0);
+        updateThrustPauseButton();
+        if(completedStep > 5) {
+            await softStop();
+            log(`✅ Одиночный замер ${completedStep * 10}% завершен. Включаем охлаждение двигателя.`, "#00ff41");
+            await startCooling();
+        } else {
+            await softStop();
+            log(`✅ Одиночный замер ${completedStep * 10}% завершен. Двигатель остановлен.`, "#00ff41");
+        }
+        return;
+    }
+    
+    thrustStep++;
+    if(thrustStep <= 10) {
+        await startThrustStep(thrustStep, true);
+        let gasPercent = thrustStep * 10;
+        log(`🚀 Переход на Шаг ${thrustStep}: Газ ${gasPercent}% (${1000 + gasPercent * 10} PWM). Ожидание ввода данных...`, "#ffc107");
+    } else {
+        log("🎉 Все точки замера собраны!", "#00ff41");
+        soundDone();
+        thrustStep = 0;
+        document.getElementById('btnStartThrust').disabled = false;
+        document.getElementById('btnNextThrust').disabled = true;
+        document.getElementById('btnResetThrust').disabled = false;
+        highlightThrustRow(0);
+        updateThrustPauseButton();
+        await softStop();
+        log("✅ Цикл замеров тяги завершен. Включаем охлаждение двигателя.", "#00ff41");
+        await startCooling();
+    }
+}
+
+function resetThrustTable() {
+    clearThrustReadyTimer();
+    if(testing || thrustPaused) return; sessionData = {}; thrustStep = 0; thrustManualStepMode = false; pausedThrustStep = 0; pausedManualStepMode = false;
+    for(let i=1; i<=10; i++) {
+        document.getElementById(`tR-${i}`).innerText = "--";
+        const ampInput = document.getElementById(`inA-${i}`); if(ampInput) ampInput.value = "";
+        document.getElementById(`tE-${i}`).innerText = "--"; document.getElementById(`inG-${i}`).value = "";
+    }
+    calcGraph(); log("🧹 Таблица и лабораторные графики полностью очищены.");
+}
+
+function exportToCSV() {
+    const passport = getTestPassport();
+    const mChannel = activeMotorIdx === 'all' ? "All motors" : `Motor M${activeMotorIdx + 1}`;
+    const motorFilePart = makeSafeFilePart(passport.motor, "UnknownMotor");
+    const dataRows = getFactoryThrustRows();
+
+    const reportTitle = passport.motor && passport.motor !== "Не указан" ? passport.motor : "MOTOR TEST REPORT";
+    const rows = [
+        [reportTitle],
+        ["Motor model", reportValue(passport.motor)],
+        ["Prop model", reportValue(passport.prop)],
+        ["ESC", reportValue(passport.esc)],
+        ["Power source", reportValue(passport.battery)],
+        ["Operator", reportValue(passport.operator)],
+        ["Motor channel", mChannel],
+        ["Test date", new Date().toLocaleString()],
+        ["Note", reportValue(passport.note)],
+        [],
+        ["Item NO.", "Prop", "Throttle", "Volts (V)", "Amps (A)", "Watts (W)", "Revolution (ERPM)", "Thrust (g)", "Efficiency (g/W)"]
+    ];
+    dataRows.forEach((r, idx) => rows.push([
+        idx === 0 ? passport.motor : "",
+        idx === 0 ? passport.prop : "",
+        `${r.throttle}%`,
+        excelNum(r.volts, 2),
+        excelNum(r.amps, 2),
+        excelNum(r.watts, 1),
+        excelNum(r.erpm, 0),
+        excelNum(r.thrust, 0),
+        excelNum(r.efficiency, 2)
+    ]));
+    rows.push(
+        [],
+        ["Notes", "Hold time before each saved step is 4 seconds. RPM stability waiting is not used."]
+    );
+    let timestamp = new Date().toISOString().slice(0,10);
+    const motorSuffix = activeMotorIdx === 'all' ? "ALL" : `M${activeMotorIdx + 1}`;
+    downloadExcelCsvFile(`Motor_Thrust_Report_${motorFilePart}_${motorSuffix}_${timestamp}.csv`, rows);
+    log(`💾 CSV в заводском формате сохранен.`);
+}
+
+function getFactoryThrustRows() {
+    const rows = [];
+    for(let i = 4; i <= 10; i++) {
+        const throttle = i * 10;
+        const erpmText = document.getElementById(`tR-${i}`)?.innerText || "";
+        const ampsText = document.getElementById(`inA-${i}`)?.value || "";
+        const thrustText = document.getElementById(`inG-${i}`)?.value || "";
+        const erpm = parseFloat(String(erpmText).replace(',', '.'));
+        const amps = parseFloat(String(ampsText).replace(',', '.'));
+        const thrust = parseFloat(String(thrustText).replace(',', '.'));
+        const volts = sessionData[i]?.v || curV || 0;
+        const watts = volts > 0 && !Number.isNaN(amps) ? volts * amps : 0;
+        const efficiency = watts > 0 && !Number.isNaN(thrust) ? thrust / watts : 0;
+        rows.push({
+            throttle,
+            volts,
+            amps: Number.isNaN(amps) ? 0 : amps,
+            watts,
+            erpm: Number.isNaN(erpm) ? 0 : erpm,
+            thrust: Number.isNaN(thrust) ? 0 : thrust,
+            efficiency
+        });
+    }
+    return rows;
+}
+
+function getStepAmps(step, fallback=0) {
+    const raw = document.getElementById(`inA-${step}`)?.value || "";
+    const value = parseFloat(String(raw).replace(',', '.'));
+    return Number.isNaN(value) ? fallback : value;
+}
+
+function reportValue(value, fallback="Not specified") {
+    const s = (value || "").trim();
+    if(!s || s === "Не указан" || s === "Не указана" || s === "Не указано") return fallback;
+    return s;
+}
+
+function htmlEscape(value) {
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function exportFactoryXLS() {
+    const passport = getTestPassport();
+    const dataRows = getFactoryThrustRows();
+    const motorSuffix = activeMotorIdx === 'all' ? "ALL" : `M${activeMotorIdx + 1}`;
+    const motorFilePart = makeSafeFilePart(passport.motor, "UnknownMotor");
+    const timestamp = new Date().toISOString().slice(0,10);
+    const testDate = new Date().toLocaleString();
+    const notes = reportValue(passport.note, "");
+    const rowSpan = dataRows.length;
+    const tableRows = dataRows.map((r, idx) => `
+        <tr class="${idx % 2 ? 'shade' : ''}">
+            ${idx === 0 ? `<td rowspan="${rowSpan}" class="center">${htmlEscape(reportValue(passport.motor))}</td><td rowspan="${rowSpan}" class="center">${htmlEscape(reportValue(passport.prop))}</td>` : ""}
+            <td class="center">${r.throttle}%</td>
+            <td>${excelNum(r.volts, 2)}</td>
+            <td>${excelNum(r.amps, 2)}</td>
+            <td>${excelNum(r.watts, 1)}</td>
+            <td>${excelNum(r.erpm, 0)}</td>
+            <td>${excelNum(r.thrust, 0)}</td>
+            <td>${excelNum(r.efficiency, 2)}</td>
+        </tr>`).join("");
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-16">
+<style>
+body { font-family: "Times New Roman", serif; font-size: 12pt; }
+table { border-collapse: collapse; width: 100%; }
+td, th { border: 1px solid #000; padding: 5px 7px; vertical-align: middle; }
+.meta td { border: none; padding: 3px 8px; }
+.title { font-size: 16pt; font-weight: bold; text-align: center; }
+.head th { background: #9b9b9b; font-weight: bold; text-align: center; }
+.shade td { background: #bfbfbf; }
+.center { text-align: center; }
+.note { background: #9b9b9b; font-size: 11pt; }
+</style>
+</head>
+<body>
+<div class="title">${htmlEscape(passport.motor && passport.motor !== "Не указан" ? passport.motor : "MOTOR TEST REPORT")}</div>
+<table class="meta">
+<tr><td>Motor model:</td><td>${htmlEscape(reportValue(passport.motor))}</td><td>Prop model:</td><td>${htmlEscape(reportValue(passport.prop))}</td><td>ESC model:</td><td>${htmlEscape(reportValue(passport.esc))}</td></tr>
+<tr><td>Power source:</td><td>${htmlEscape(reportValue(passport.battery))}</td><td>Operator:</td><td>${htmlEscape(reportValue(passport.operator))}</td><td>Note:</td><td>${htmlEscape(reportValue(passport.note))}</td></tr>
+<tr><td>Test time:</td><td>${htmlEscape(testDate)}</td><td>Motor channel:</td><td>${htmlEscape(activeMotorIdx === 'all' ? "All motors" : `M${activeMotorIdx + 1}`)}</td><td>Mode:</td><td>Step thrust test</td></tr>
+</table>
+<br>
+<table>
+<tr class="head">
+<th>Item NO.</th><th>Prop</th><th>Throttle</th><th>Volts<br>(V)</th><th>Amps<br>(A)</th><th>Watts<br>(W)</th><th>Revolution<br>(ERPM)</th><th>Thrust<br>(g)</th><th>Efficiency<br>(g/W)</th>
+</tr>
+${tableRows}
+<tr><td colspan="9" class="note">Notes: ${notes ? `${htmlEscape(notes)} ` : ""}Hold time before each saved step is 4 seconds. RPM stability waiting is not used.</td></tr>
+</table>
+</body>
+</html>`;
+    downloadBinaryFile(`Motor_Thrust_Report_${motorFilePart}_${motorSuffix}_${timestamp}.xls`, encodeUtf16Le(html), "application/vnd.ms-excel;charset=utf-16le;");
+    log("📄 Заводской Excel-отчет сохранен.");
+}
+
+function exportChartToPNG(chartId, defaultName) {
+    const canvas = document.getElementById(chartId); if(!canvas) return;
+    let mMotor = document.getElementById('metaMotor').value || "";
+    let motorFilePart = mMotor.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9а-яА-Я._-]/g, '');
+    let prefix = motorFilePart ? motorFilePart + "_" : "";
+    let fileMotorIndex = (activeMotorIdx === 'all') ? "ALL" : `M${activeMotorIdx + 1}`;
+    let link = document.createElement("a");
+    link.download = `${prefix}${defaultName}_${fileMotorIndex}_${new Date().toISOString().slice(0,10)}.png`;
+    link.href = canvas.toDataURL("image/png"); link.click();
+    log(`📸 График успешно экспортирован.`);
+}
+
+function makeSafeFilePart(text, fallback="Motor") {
+    let part = (text || "").trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9а-яА-Я._-]/g, '');
+    return part || fallback;
+}
+
+function excelNum(value, decimals=2) {
+    if(value === null || value === undefined || value === "" || value === "--") return "";
+    const n = parseFloat(String(value).replace(',', '.'));
+    if(Number.isNaN(n)) return value;
+    return n.toFixed(decimals).replace('.', ',');
+}
+
+function excelCell(value) {
+    let s = value === null || value === undefined ? "" : String(value);
+    s = s.replace(/\r?\n/g, " ");
+    if(/^[=+\-@]/.test(s)) s = "'" + s;
+    if(/[;"\r\n]/.test(s) || /^\s|\s$/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+}
+
+function makeExcelCsv(rows) {
+    return "sep=;\r\n" + rows.map(row => row.map(excelCell).join(";")).join("\r\n") + "\r\n";
+}
+
+function downloadExcelCsvFile(filename, rows) {
+    downloadTextFile(filename, makeExcelCsv(rows), "text/csv;charset=utf-8;");
+}
+
+function encodeUtf16Le(text) {
+    const bytes = new Uint8Array(2 + text.length * 2);
+    bytes[0] = 0xFF;
+    bytes[1] = 0xFE;
+    for(let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        bytes[2 + i * 2] = code & 0xFF;
+        bytes[3 + i * 2] = code >> 8;
+    }
+    return bytes;
+}
+
+function downloadBinaryFile(filename, bytes, mime) {
+    let blob = new Blob([bytes], { type: mime });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function downloadTextFile(filename, text, mime="text/csv;charset=utf-8;") {
+    let blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), text], { type: mime });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function exportRpmLogCSV() {
+    if(rpmLog.length === 0) {
+        log("⚠️ Нет RPM-данных для экспорта. Запустите моторы и дождитесь телеметрии.", "#ffc107");
+        return;
+    }
+    const passport = getTestPassport();
+    const motorPart = makeSafeFilePart(passport.motor, "UnknownMotor");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0,19);
+    const rows = [
+        ["MOTOR RPM LOG"],
+        ["Motor model", reportValue(passport.motor)],
+        ["Prop model", reportValue(passport.prop)],
+        ["ESC", reportValue(passport.esc)],
+        ["Power source", reportValue(passport.battery)],
+        ["Note", reportValue(passport.note)],
+        ["Date", new Date().toLocaleString()],
+    ];
+    const finalSpread = calcFinalMotorSpread();
+    if(finalSpread) {
+        rows.push(
+            [],
+            ["FINAL ERPM SPREAD", finalSpread.fallback ? "calculation window: available last points, test is shorter than stabilization time" : `calculation window: after ${(finalSpread.stabilizationMs / 1000).toFixed(0)} sec stabilization until test end`, `points ${finalSpread.rows}`],
+            ["Motor", "Average ERPM", "Deviation from average %"]
+        );
+        for(let i=0; i<4; i++) rows.push([`M${i+1}`, finalSpread.avgs[i] > 0 ? excelNum(finalSpread.avgs[i], 0) : "", finalSpread.deviations[i] === null ? "" : excelNum(finalSpread.deviations[i], 2)]);
+        rows.push(
+            ["Average of active motors", finalSpread.stats.count > 0 ? excelNum(finalSpread.stats.avg, 0) : "", ""],
+            ["Final spread", finalSpread.stats.spread === null ? "" : excelNum(finalSpread.stats.spread, 2), "%"]
+        );
+    }
+    rows.push(
+        [],
+        ["Time ms", "Time s", "PWM", "Voltage V", "Current A", "Vibration", "ERPM M1", "ERPM M2", "ERPM M3", "ERPM M4", "Average ERPM", "Spread %", "Active motors"]
+    );
+    for(const r of rpmLog) {
+        const spread = r.spread || calcMotorSpread(r.erpm);
+        rows.push([
+            r.ms,
+            excelNum(r.ms / 1000, 2),
+            r.pwm,
+            excelNum(r.voltage, 2),
+            excelNum(r.current, 2),
+            r.vibration,
+            r.erpm[0],
+            r.erpm[1],
+            r.erpm[2],
+            r.erpm[3],
+            spread.count > 0 ? excelNum(spread.avg, 0) : "",
+            spread.spread === null ? "" : excelNum(spread.spread, 2),
+            spread.count
+        ]);
+    }
+    downloadExcelCsvFile(`RPM_Log_${motorPart}_${timestamp}.csv`, rows);
+    log(`💾 RPM Excel CSV сохранен. Точек: ${rpmLog.length}.`);
+}
+
+function exportMotorRpmPNGs() {
+    if(rpmLog.length === 0) {
+        log("⚠️ Нет RPM-данных для графиков. Запустите моторы и дождитесь телеметрии.", "#ffc107");
+        return;
+    }
+    const passport = getTestPassport();
+    const motorPart = makeSafeFilePart(passport.motor, "UnknownMotor");
+    const timestamp = new Date().toISOString().slice(0,10);
+    const colors = ['#00ff41','#00c3ff','#6f42c1','#ffc107'];
+    const labels = rpmLog.map(r => (r.ms / 1000).toFixed(1));
+    for(let i=0; i<4; i++) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1200;
+        canvas.height = 700;
+        canvas.style.position = 'fixed';
+        canvas.style.left = '-9999px';
+        document.body.appendChild(canvas);
+        const chart = new Chart(canvas, {
+            type:'line',
+            data:{ labels, datasets:[{ label:`M${i+1} ERPM`, data:rpmLog.map(r => r.erpm[i]), borderColor:colors[i], backgroundColor:'transparent', tension:0.1, pointRadius:0 }] },
+            options:{ responsive:false, animation:false, plugins:{ legend:{ display:true } }, scales:{ y:{ beginAtZero:true }, x:{ title:{ display:true, text:'Time, s' } } } }
+        });
+        chart.update();
+        const link = document.createElement('a');
+        link.download = `RPM_Graph_${motorPart}_M${i+1}_${timestamp}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        if(chart.destroy) chart.destroy();
+        document.body.removeChild(canvas);
+    }
+    log("📸 Отдельные RPM-графики M1-M4 экспортированы.");
+}
+
+function highlightThrustRow(step) {
+    for(let i=1; i<=10; i++) {
+        let row = document.getElementById(`row-${i}`);
+        if(row) {
+            if(i === step) { row.style.background = "#1b2a1e"; row.style.outline = "1px solid var(--accent)"; let inputField = document.getElementById(`inA-${i}`); if(inputField) inputField.focus(); } 
+            else { row.style.background = ""; row.style.outline = ""; }
+        }
+    }
+}
+
+function calcGraph() {
+    let lx=[], tY=[], eY=[];
+    for(let i=1; i<=10; i++) {
+        let gas = i*10, thr = parseFloat(document.getElementById(`inG-${i}`).value); lx.push(gas);
+        if(!isNaN(thr) && thr > 0) {
+            tY.push(thr);
+            if(sessionData[i] && sessionData[i].v > 0) {
+                const amps = getStepAmps(i, sessionData[i].a);
+                sessionData[i].a = amps;
+                if(amps > 0) {
+                    let eff = thr / (amps * sessionData[i].v); document.getElementById(`tE-${i}`).innerText = eff.toFixed(2); eY.push(eff);
+                } else { eY.push(null); }
+            }
+        } else { tY.push(null); eY.push(null); }
+    }
+    
+    if(!chThrust) return;
+    if (thrustChartMode === 'gas') {
+        chThrust.data.labels = [10,20,30,40,50,60,70,80,90,100];
+        chThrust.data.datasets[0].label = 'Тяга (г)'; chThrust.data.datasets[0].data = tY; chThrust.data.datasets[1].data = eY;
+        chThrust.data.datasets[0].hidden = false; if(chThrust.options.scales && chThrust.options.scales.y) chThrust.options.scales.y.display = true;
+    } else {
+        let proPairs = [];
+        for(let i=1; i<=10; i++) {
+            let thr = parseFloat(document.getElementById(`inG-${i}`).value);
+            if(!isNaN(thr) && thr > 0 && sessionData[i]) {
+                const amps = getStepAmps(i, sessionData[i].a);
+                if(amps > 0 && sessionData[i].v > 0) proPairs.push({ x: thr, y: thr / (amps * sessionData[i].v) });
+            }
+        }
+        proPairs.sort((a,b) => a.x - b.x);
+        chThrust.data.labels = proPairs.map(p => p.x + "г"); chThrust.data.datasets[0].data = []; chThrust.data.datasets[0].hidden = true;
+        chThrust.data.datasets[1].data = proPairs.map(p => p.y); if(chThrust.options.scales && chThrust.options.scales.y) chThrust.options.scales.y.display = false;
+    }
+    chartUpdate(chThrust);
+}
+
+function toggleChartMode() {
+    thrustChartMode = (thrustChartMode === 'gas') ? 'efficiency' : 'gas';
+    let btn = document.getElementById('btnToggleChart');
+    if(btn) btn.innerText = (thrustChartMode === 'gas') ? "📈 Вид: ГАЗ %" : "📈 Вид: г/Вт";
+    calcGraph();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+const COMPONENT_DB_KEY = 'motorSuiteComponentDbV1';
+const COMPONENT_SELECTS = {
+    motors: { selectId: 'quickMotor', inputId: 'metaMotor', label: 'моторов' },
+    props: { selectId: 'quickProp', inputId: 'metaProp', label: 'винтов' },
+    escs: { selectId: 'quickEsc', inputId: 'metaEsc', label: 'ESC' },
+    batteries: { selectId: 'quickBattery', inputId: 'metaBattery', label: 'питания' }
+};
+
+function getComponentDb() {
+    try {
+        const db = JSON.parse(localStorage.getItem(COMPONENT_DB_KEY) || "{}");
+        return normalizeComponentDb(db);
+    } catch(e) {
+        return normalizeComponentDb({});
+    }
+}
+
+function setComponentDb(db) {
+    localStorage.setItem(COMPONENT_DB_KEY, JSON.stringify(normalizeComponentDb(db)));
+}
+
+function normalizeComponentDb(db) {
+    const out = {};
+    Object.keys(COMPONENT_SELECTS).forEach(type => {
+        const seen = new Set();
+        out[type] = (Array.isArray(db?.[type]) ? db[type] : [])
+            .map(v => String(v || "").trim())
+            .filter(v => {
+                const key = v.toLowerCase();
+                if(!v || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .sort((a,b) => a.localeCompare(b));
+    });
+    return out;
+}
+
+function loadComponentDatabase() {
+    const db = getComponentDb();
+    Object.entries(COMPONENT_SELECTS).forEach(([type, cfg]) => {
+        const select = document.getElementById(cfg.selectId);
+        if(!select) return;
+        const current = select.value;
+        const firstText = select.options[0]?.text || "Быстрый выбор";
+        select.innerHTML = `<option value="">${firstText}</option>`;
+        db[type].forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            select.appendChild(option);
+        });
+        if([...select.options].some(o => o.value === current)) select.value = current;
+    });
+}
+
+function saveComponent(type, inputId) {
+    const input = document.getElementById(inputId);
+    const value = (input?.value || "").trim();
+    if(!value) { log("⚠️ Введите название комплектующего перед сохранением.", "#ffc107"); return; }
+    const db = getComponentDb();
+    if(!db[type].some(v => v.toLowerCase() === value.toLowerCase())) {
+        db[type].push(value);
+        db[type].sort((a,b) => a.localeCompare(b));
+        setComponentDb(db);
+        loadComponentDatabase();
+        log(`✅ Комплектующее сохранено в базу: ${value}`);
+    } else {
+        log(`ℹ️ Уже есть в базе: ${value}`, "#00c3ff");
+    }
+    const cfg = COMPONENT_SELECTS[type];
+    const select = cfg ? document.getElementById(cfg.selectId) : null;
+    if(select) select.value = value;
+}
+
+function applyComponent(selectId, inputId) {
+    const select = document.getElementById(selectId);
+    const input = document.getElementById(inputId);
+    if(select && input && select.value) input.value = select.value;
+}
+
+function deleteSelectedComponent(type, selectId, inputId) {
+    const select = document.getElementById(selectId);
+    const value = (select?.value || "").trim();
+    if(!value) { log("⚠️ Сначала выберите комплектующее из списка.", "#ffc107"); return; }
+    const db = getComponentDb();
+    db[type] = db[type].filter(v => v !== value);
+    setComponentDb(db);
+    loadComponentDatabase();
+    const input = document.getElementById(inputId);
+    if(input && input.value === value) input.value = "";
+    log(`🗑 Удалено из базы: ${value}`, "#ffc107");
+}
+
+function exportComponentDatabase() {
+    const text = JSON.stringify(getComponentDb(), null, 2);
+    downloadTextFile("components_database.json", text, "application/json;charset=utf-8;");
+    log("💾 База комплектующих экспортирована в components_database.json.");
+}
+
+function importComponentDatabase(file) {
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const db = normalizeComponentDb(JSON.parse(reader.result));
+            setComponentDb(db);
+            loadComponentDatabase();
+            log(`✅ База комплектующих импортирована: ${file.name}`);
+        } catch(e) {
+            log(`❌ Ошибка импорта базы: ${e.message}`, "#ff4444");
+        }
+    };
+    reader.onerror = () => log("❌ Не удалось прочитать файл базы комплектующих.", "#ff4444");
+    reader.readAsText(file, "utf-8");
+}
+
+function getTestPassport() {
+    const val = id => (document.getElementById(id)?.value || "").trim();
+    return {
+        motor: val('metaMotor') || "Не указан",
+        prop: val('metaProp') || "Не указан",
+        esc: val('metaEsc') || "Не указан",
+        battery: val('metaBattery') || "Не указан",
+        operator: val('metaOperator'),
+        note: val('metaNote') || ""
+    };
+}
+
+function getProfileMaxPwm() {
+    const el = document.getElementById('profileMaxPwm');
+    let pwm = el ? parseInt(el.value, 10) : 1500;
+    if(isNaN(pwm)) pwm = 1500;
+    pwm = Math.max(1050, Math.min(2000, pwm));
+    if(el) el.value = pwm;
+    return pwm;
+}
+
+function updateProfileHint() {
+    const profile = document.getElementById('testProfile')?.value || 'single';
+    const hint = document.getElementById('profileHint');
+    if(!hint) return;
+    const hints = {
+        single: "Один выбранный мотор: плавный разгон до Max PWM, короткое удержание и плавный стоп.",
+        all: "Все моторы вместе: быстрый контроль ESC/платы под одинаковой нагрузкой.",
+        linear: "Линейный sweep 0-100-0% с графиком ERPM M1-M4 и тока.",
+        stepped: "Ступенчатая тяга: ручной проход 10-100% с вводом тяги по каждому шагу.",
+        endurance: "Endurance 30/60 сек: удержание Max PWM с логом тока и ERPM раз в 5 секунд."
+    };
+    hint.innerText = hints[profile] || "";
+}
+
+function setProfileRunning(running) {
+    const btn = document.getElementById('btnRunProfile');
+    if(btn) {
+        btn.innerText = running ? "⏹ Остановить профиль" : "▶ Запустить профиль";
+        btn.style.background = running ? "var(--crit)" : "";
+    }
+}
+
+async function holdCalibrationStep(pwm, ms) {
+    motorVals.fill(pwm);
+    await writeMotors();
+    await sleep(ms);
+    log(`Проверка ${pwm} PWM | ток ${curA.toFixed(2)}A | ERPM ${getActiveAvgERPM()}`, "#ffc107");
+}
+
+async function runCalibrationCheck() {
+    if(!guardCommand('runCalibrationCheck')) return;
+    getAudioCtx();
+    if(!port) { log("❌ Сначала подключите устройство.", "#ff4444"); return; }
+    if(testing) { emergencyStop(); return; }
+    testing = true;
+    setProfileRunning(true);
+    soundStart();
+    const passport = getTestPassport();
+    const targetLabel = activeMotorIdx === 'all' ? "всех моторов" : `мотора M${activeMotorIdx + 1}`;
+    log(`▶ Проверка ${targetLabel}: ${passport.motor}, винт: ${passport.prop}.`);
+    try {
+        await holdCalibrationStep(1000, 700);
+        await holdCalibrationStep(1100, 1500);
+        await holdCalibrationStep(1200, 1500);
+        await holdCalibrationStep(1000, 700);
+    } finally {
+        await softStop();
+        setProfileRunning(false);
+        soundDone();
+        log("✅ Проверка мотора завершена. Проверьте направление вращения и плавность старта.", "#00ff41");
+    }
+}
+
+async function runProfileRamp(label, motorMode) {
+    if(!guardCommand(`runProfileRamp-${motorMode}`)) return;
+    if(testing) return;
+    getAudioCtx();
+    testing = true;
+    setProfileRunning(true);
+    const maxPwm = getProfileMaxPwm();
+    setActiveMotorMode(motorMode);
+    soundStart();
+    log(`▶ ${label}: плавный разгон до ${maxPwm} PWM.`);
+    try {
+        for(let v=1000; v<=maxPwm; v+=10) {
+            if(!testing) break;
+            motorVals.fill(v);
+            await writeMotors();
+            await sleep(35);
+        }
+        for(let i=0; i<50 && testing; i++) {
+            motorVals.fill(maxPwm);
+            await writeMotors();
+            await sleep(100);
+        }
+    } finally {
+        await softStop();
+        setProfileRunning(false);
+        soundDone();
+        log(`✅ ${label}: профиль завершен.`);
+    }
+}
+
+async function runEnduranceProfile() {
+    if(!guardCommand('runEnduranceProfile')) return;
+    if(testing) return;
+    getAudioCtx();
+    testing = true;
+    setProfileRunning(true);
+    const target = getProfileMaxPwm();
+    const duration = parseInt(document.getElementById('profileDuration')?.value || "30", 10);
+    soundStart();
+    log(`▶ Endurance: ${duration} сек на ${target} PWM.`);
+    try {
+        for(let v=1000; v<=target; v+=10) {
+            if(!testing) break;
+            motorVals.fill(v);
+            await writeMotors();
+            await sleep(40);
+        }
+        for(let sec=1; sec<=duration && testing; sec++) {
+            motorVals.fill(target);
+            await writeMotors();
+            if(sec === 1 || sec % 5 === 0 || sec === duration) {
+                log(`⏱ ${sec}/${duration} сек | ток ${curA.toFixed(2)}A | ERPM ${getActiveAvgERPM()}`, "#ffc107");
+            }
+            await sleep(1000);
+        }
+    } finally {
+        await softStop();
+        setProfileRunning(false);
+        soundDone();
+        log("✅ Endurance завершен.");
+    }
+}
+
+async function runSelectedProfile() {
+    if(!guardCommand('runSelectedProfile')) return;
+    if(!port) { log("❌ Сначала подключите устройство.", "#ff4444"); return; }
+    if(testing) { emergencyStop(); setProfileRunning(false); return; }
+    const profile = document.getElementById('testProfile')?.value || 'single';
+    if(profile === 'single') return runProfileRamp("Одиночный мотор", 'single');
+    if(profile === 'all') return runProfileRamp("Все моторы", 'all');
+    if(profile === 'linear') return runLinearSweep();
+    if(profile === 'stepped') {
+        setProfileRunning(true);
+        setActiveMotorMode('single');
+        openWindow('win-thrust', document.getElementById('navThrust'));
+        startThrustTest();
+        log("ℹ️ Ступенчатый профиль запущен. После ввода тяги нажимайте «Далее».", "#00c3ff");
+        return;
+    }
+    if(profile === 'endurance') return runEnduranceProfile();
+}
+
+function appendLinearPoint(t) {
+    chLinear.data.labels.push(t+"ms");
+    chLinear.data.datasets[0].data.push(latestERPM[0]);
+    chLinear.data.datasets[1].data.push(latestERPM[1]);
+    chLinear.data.datasets[2].data.push(latestERPM[2]);
+    chLinear.data.datasets[3].data.push(latestERPM[3]);
+    chLinear.data.datasets[4].data.push(curA);
+}
+
+function maybeUpdateChart(chart, lastUpdate, interval=250) {
+    const now = Date.now();
+    if(now - lastUpdate >= interval) {
+        chartUpdate(chart);
+        return now;
+    }
+    return lastUpdate;
+}
+
+// УЛУЧШЕНИЕ: Скорость отрисовки выведена на абсолютный максимум + Прямой замер всех 4 каналов
+async function runLinearSweep() {
+    if(!guardCommand('runLinearSweep')) return;
+    if(testing || !chLinear) return; 
+    testing = true; chLinear.data.labels=[]; 
+    for(let j=0; j<5; j++) chLinear.data.datasets[j].data=[]; 
+    chartUpdate(chLinear);
+    let lastChartUpdate = 0;
+    let t=0; log(`🚀 Линейный прогон начат (Рендеринг кривых M1-M4 на полной частоте)...`);
+    
+    for(let v=1000; v<=2000; v+=10) { 
+        if(!testing) break; motorVals.fill(v); await writeMotors(); await new Promise(r=>setTimeout(r,35)); t+=35; 
+        appendLinearPoint(t);
+        lastChartUpdate = maybeUpdateChart(chLinear, lastChartUpdate);
+    }
+    log("⏳ Удержание 3 секунды...");
+    for(let i=0; i<75; i++) { 
+        if(!testing) break; await new Promise(r=>setTimeout(r,40)); t+=40; 
+        appendLinearPoint(t);
+        lastChartUpdate = maybeUpdateChart(chLinear, lastChartUpdate);
+    }
+    for(let v=2000; v>=1000; v-=10) { 
+        if(!testing) break; motorVals.fill(v); await writeMotors(); await new Promise(r=>setTimeout(r,35)); t+=35; 
+        appendLinearPoint(t);
+        lastChartUpdate = maybeUpdateChart(chLinear, lastChartUpdate);
+    }
+    chartUpdate(chLinear);
+    await softStop(); log("✅ Тест линейного разгона завершен.");
+}
+
+async function runResonanceTest() { 
+    if(!guardCommand('runResonanceTest')) return;
+    if(testing) return; testing=true; if(chRes) { chRes.data.labels=[]; chRes.data.datasets[0].data=[]; chartUpdate(chRes); } log("📳 Сканирование резонансов начато...");
+    let lastChartUpdate = 0;
+    for(let v=1000; v<=2000; v+=20) { if(!testing) break; motorVals.fill(v); await writeMotors(); await new Promise(r=>setTimeout(r,100)); if(chRes) { chRes.data.labels.push(v); chRes.data.datasets[0].data.push(curG); lastChartUpdate = maybeUpdateChart(chRes, lastChartUpdate, 300); } } 
+    if(chRes) chartUpdate(chRes);
+    await softStop(); log("✅ Сканирование резонансов завершено.");
+}
+
+async function softStop() { 
+    testing = false; thrustStep = 0; thrustManualStepMode = false; thrustPaused = false; pausedThrustStep = 0; pausedManualStepMode = false; smooth100Holding = false; targetRampHolding = false; coolingActive = false;
+    clearThrustReadyTimer();
+    setProfileRunning(false);
+    let btnSmooth = document.getElementById('btnSmooth100'); if(btnSmooth) { btnSmooth.innerText = "▶ НАЧАТЬ РАЗГОН ДО 100%"; btnSmooth.style.background = ""; }
+    resetTargetRampButton();
+    resetCoolingButton();
+    updateThrustPauseButton();
+    let m = Math.max(...motorVals); for(let v=m; v>=1000; v-=20){ motorVals.fill(v); await writeMotors(); await new Promise(r=>setTimeout(r,45)); } 
+    motorVals.fill(1000); await writeMotors(); if(document.getElementById('btnResetThrust')) document.getElementById('btnResetThrust').disabled = false;
+}
+
+function emergencyStop() { 
+    getAudioCtx();
+    testing = false; thrustStep = 0; thrustManualStepMode = false; thrustPaused = false; pausedThrustStep = 0; pausedManualStepMode = false; smooth100Holding = false; targetRampHolding = false; coolingActive = false; motorVals.fill(1000); writeMotors(); 
+    clearThrustReadyTimer();
+    stopRpmCapture();
+    setProfileRunning(false);
+    let bStart = document.getElementById('btnStartThrust'), bNext = document.getElementById('btnNextThrust'), bReset = document.getElementById('btnResetThrust');
+    if(bStart) bStart.disabled = false; if(bNext) bNext.disabled = true; if(bReset) bReset.disabled = false;
+    let btnSmooth = document.getElementById('btnSmooth100'); if(btnSmooth) { btnSmooth.innerText = "▶ НАЧАТЬ РАЗГОН ДО 100%"; btnSmooth.style.background = ""; }
+    resetTargetRampButton();
+    resetCoolingButton();
+    updateThrustPauseButton();
+    soundAlarm();
+    highlightThrustRow(0); log("🛑 АВАРИЙНЫЙ СТОП! Сигнал газа сброшен на 1000.", "#ff4444"); 
+}
+
+function masterInput(v) { if(!testing) { motorVals.fill(parseInt(v)); document.getElementById('mVal').innerText=v; writeMotors(); } }
+</script>
+</body>
+</html>

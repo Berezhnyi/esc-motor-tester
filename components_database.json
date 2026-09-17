@@ -1,0 +1,57 @@
+﻿{
+  "motors": [
+    "3115-900KV RTS",
+    "3115-900KV Ezi-hobby v1",
+    "3115-900KV Ezi-hobby v2",
+    "3115-1200KV E-Power",
+    "3115-640KV T-Motor",
+    "3115-900KV E-Power",
+    "3115-900KV T-Motor",
+	"3115-1000KV T-Motor",
+    "3120-500KV T-Motor",
+    "4115-650KV E-Power",
+    "4214-660KV Ezi-hobby ",
+    "4214-400KV T-Motor",
+    "4215-650KV E-Power",   
+    "4315-360KV Ezi-hobby ",
+    "4315-360KV E-Power",
+    "4315-360KV T-Motor",
+	"4315-360KV Top Motor",
+	"4315-520KV T-Motor ",
+	"4315-520KV Ezi-hobby ",
+    "4315-520KV E-Power",
+    "4315-520KV Hobby Wing",
+    "4315-520KV Top Motor",
+    "4315-560KV Top Motor",
+    "4315-650KV E-Power",
+    "4320-350KV E-Power",
+    "4720-300KV E-Power",
+    "M2807-1300KV"
+  ],
+  "props": [
+    "10x5x3 - HQProp",
+	"8x8x2 - HQProp",
+    "10x5x3 - WindMaster",
+    "GF1050-3",
+	"GF1008E-2",
+    "GF1308-3",
+    "GF1310-3",
+    "GF1507-3",
+    "GF1512-2",
+    "GF7040-3",
+    "T-Motor 1310-3",
+	"T-Motor 10,5/5-3",
+    "T-Motor 1508-3",
+    "T-Motor 1510-3"
+  ],
+  "escs": [
+    "GepRC 100A",
+    "HOBBYWING 65A"
+  ],
+  "batteries": [
+    "6S batteries",
+	"8S batteries",
+    "ACPOWER-24V-200A",
+    "ACPOWER-32V-200A"
+  ]
+}
